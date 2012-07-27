@@ -10,4 +10,6 @@ python main.py --domain http://blog.lesite.us --output sitemap.xml
 
 Advanced usage
 --------------
-Todo
+
+Enable debug :
+python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
