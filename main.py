@@ -62,11 +62,7 @@ while tocrawl:
 
 	
 	links = linkregex.findall(msg)
-	# print (links)
-	# for link in links:
-	# 	print (link)
 	crawled.add(crawling)
-	#for link in (links.pop(0) for _ in range(len(links))):
 	for link in links:
 		link = link.decode("utf-8")
 		if link.startswith('/'):
@@ -82,9 +78,9 @@ while tocrawl:
 
 		domain_link = urlparse(link)[1]
 		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and ("javascript:" not in link):
-			#content += "<url><loc>"+link+"</loc></url>"
 			print ("<url><loc>"+link+"</loc></url>", file=outputFile)
 			tocrawl.add(link)
 print (footer, file=outputFile)
 
-#print len(crawled)
+if arg.debug:
+	print ("Number of link crawled : {0}".format(len(crawled)))
