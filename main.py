@@ -50,6 +50,7 @@ if arg.output is not None:
 
 tocrawl = set([arg.domain])
 crawled = set([])
+# TODO also search for window.location={.*?}
 linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
 
 header = """
