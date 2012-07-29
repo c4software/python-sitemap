@@ -6,13 +6,13 @@ Warning : This script is designed to works with ***Python3***
 
 Simple usage
 ------------
-python main.py --domain http://blog.lesite.us --output sitemap.xml
+	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml
 
 Advanced usage
 --------------
 
 Enable debug :
-python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
+	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
 
-Skip url (by extension) (skip pdf AND xml url) :
-python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
+Skip url (by extension) (skip pdf AND xml url):
+	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
