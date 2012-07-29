@@ -12,7 +12,9 @@ Advanced usage
 --------------
 
 Enable debug :
+
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
 
 Skip url (by extension) (skip pdf AND xml url):
+
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
