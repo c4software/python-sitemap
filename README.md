@@ -18,3 +18,7 @@ Enable debug :
 Skip url (by extension) (skip pdf AND xml url):
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
+
+Read the robots.txt to ignore some url:
+
+	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --parserobots

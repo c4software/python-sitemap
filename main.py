@@ -1,20 +1,40 @@
 import re
 from urllib.request import urlopen, Request
+from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse
 
 import argparse
 import os
 
+def can_fetch(parserobots, rp, link):
+	try:
+		if parserobots:
+			if rp.can_fetch("*", link):
+				return True
+			else:
+				if arg.debug:
+					print ("Crawling of {0} disabled by robots.txt".format(link))
+				return False
+
+		if not parserobots:
+			return True
+
+		return True
+	except:
+		# On error continue!
+		if arg.debug:
+			print ("Error during parsing robots.txt")
+		return True
+
 # Gestion des parametres
 parser = argparse.ArgumentParser(version="0.1",description='Crawler pour la creation de site map')
 parser.add_argument('--domain', action="store", default="",required=True, help="Target domain (ex: http://blog.lesite.us)")
 parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
+parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('--output', action="store", default=None, help="Output file")
 
 arg = parser.parse_args()
-
-print (arg.skipext)
 
 outputFile = None
 if arg.output is not None:
@@ -46,6 +66,16 @@ try:
 	target_domain = urlparse(arg.domain)[1]
 except:
 	print ("Invalid domain")
+
+rp = None
+if arg.parserobots:
+	if arg.domain[len(arg.domain)-1] != "/":
+		arg.domain += "/"
+	request = Request(arg.domain+"robots.txt", headers={"User-Agent":'Sitemap crawler'})
+	rp = RobotFileParser()
+	rp.set_url(arg.domain+"robots.txt")
+	rp.read()
+
 
 print (header, file=outputFile)
 while tocrawl:
@@ -82,8 +112,8 @@ while tocrawl:
 		parsed_link = urlparse(link)
 		domain_link = parsed_link.netloc
 		target_extension = os.path.splitext(parsed_link.path)[1][1:]
-
-		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and ("javascript:" not in link) and (target_extension not in arg.skipext):
+		
+		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link) and ("javascript:" not in link) and (target_extension not in arg.skipext):
 			print ("<url><loc>"+link+"</loc></url>", file=outputFile)
 			tocrawl.add(link)
 print (footer, file=outputFile)
