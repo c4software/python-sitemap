@@ -3,14 +3,18 @@ from urllib.request import urlopen, Request
 from urllib.parse import urlparse
 
 import argparse
+import os
 
 # Gestion des parametres
 parser = argparse.ArgumentParser(version="0.1",description='Crawler pour la creation de site map')
 parser.add_argument('--domain', action="store", default="",required=True, help="Target domain (ex: http://blog.lesite.us)")
+parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('--output', action="store", default=None, help="Output file")
 
 arg = parser.parse_args()
+
+print (arg.skipext)
 
 outputFile = None
 if arg.output is not None:
@@ -76,8 +80,12 @@ while tocrawl:
 		if "#" in link:
 			link = link[:link.index('#')]
 
-		domain_link = urlparse(link)[1]
-		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and ("javascript:" not in link):
+		# Parse the url to get domain and file extension
+		parsed_link = urlparse(link)
+		domain_link = parsed_link.netloc
+		target_extension = os.path.splitext(parsed_link.path)[1][1:]
+
+		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and ("javascript:" not in link) and (target_extension not in arg.skipext):
 			print ("<url><loc>"+link+"</loc></url>", file=outputFile)
 			tocrawl.add(link)
 print (footer, file=outputFile)
