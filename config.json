@@ -1,0 +1,13 @@
+{
+	"domain":"http://blog.lesite.us",
+	"skipext":	[
+					"pdf",
+					"xml"
+				],
+	"parserobots":true,
+	"debug":false,
+	"output":"",
+	"exclude":	[
+				"action=edit"
+				]
+}
