@@ -19,6 +19,10 @@ Skip url (by extension) (skip pdf AND xml url):
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
 
+Exclude url :
+
+	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --exclude "action=edit"
+
 Read the robots.txt to ignore some url:
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --parserobots

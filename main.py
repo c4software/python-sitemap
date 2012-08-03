@@ -26,6 +26,16 @@ def can_fetch(parserobots, rp, link):
 			print ("Error during parsing robots.txt")
 		return True
 
+
+def exclude_url(exclude, link):
+	if exclude:
+		for ex in exclude:
+			if ex in link:
+				return False
+		return True
+	else:
+		return True
+
 # Gestion des parametres
 parser = argparse.ArgumentParser(version="0.1",description='Crawler pour la creation de site map')
 parser.add_argument('--domain', action="store", default="",required=True, help="Target domain (ex: http://blog.lesite.us)")
@@ -33,6 +43,7 @@ parser.add_argument('--skipext', action="append", default=[], required=False, he
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('--output', action="store", default=None, help="Output file")
+parser.add_argument('--exclude', action="append", default=[], required=False, help="Regular expression for exclude URL")
 
 arg = parser.parse_args()
 
@@ -113,8 +124,8 @@ while tocrawl:
 		parsed_link = urlparse(link)
 		domain_link = parsed_link.netloc
 		target_extension = os.path.splitext(parsed_link.path)[1][1:]
-		
-		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link) and ("javascript:" not in link) and (target_extension not in arg.skipext):
+
+		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link) and ("javascript:" not in link) and (target_extension not in arg.skipext) and (exclude_url(arg.exclude, link)):
 			print ("<url><loc>"+link+"</loc></url>", file=outputFile)
 			tocrawl.add(link)
 print (footer, file=outputFile)
