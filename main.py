@@ -68,33 +68,37 @@ else:
 
 # Overload config with flag parameters
 dict_arg = arg.__dict__
-for argument in arg.__dict__:
-	if dict_arg[argument] is not (None or ""):
-		try:
-			if type(config[argument]).__name__ == 'list':
-				config[argument].extend(dict_arg[argument])
-			else:
-				config[argument] = dict_arg[argument]
-		except:
-			pass
-arg = config
-
-if arg['debug']:
+for argument in dict_arg:
+	if argument in config:
+		if type(config[argument]).__name__ == 'list':
+			dict_arg[argument].extend(config[argument])
+		else:
+			dict_arg[argument] = config[argument]
+	# if dict_arg[argument] is not (None or ""):
+	# 	# try:
+	# 	if "argument" in config and type(config[argument]).__name__ == 'list':
+	# 		config[argument].extend(dict_arg[argument])
+	# 	elif "argument" in config:
+	# 		config[argument] = dict_arg[argument]
+	# 	# except:
+	# 	# 	pass
+print (arg)
+if arg.debug:
 	print ("Configuration : ")
 	print (arg)
 
 output_file = None
-if arg['output'] is not None:
+if arg.output:
 	try:
-		output_file = open(arg['output'], 'w')
+		output_file = open(arg.output, 'w')
 	except:
-		if not arg['debug']:
+		if not arg.debug:
 			print ("Output file not available.")
 			exit(255)
 		else:
 			print ("Continue without output file.")
 
-tocrawl = set([arg['domain']])
+tocrawl = set([arg.domain])
 crawled = set([])
 # TODO also search for window.location={.*?}
 linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
@@ -110,17 +114,17 @@ header = """
 footer = "</urlset>"
 
 try:
-	target_domain = urlparse(arg['domain'])[1]
+	target_domain = urlparse(arg.domain)[1]
 except:
 	print ("Invalid domain")
 
 rp = None
-if arg['parserobots']:
-	if arg['domain'][len(arg['domain'])-1] != "/":
-		arg['domain'] += "/"
-	request = Request(arg['domain']+"robots.txt", headers={"User-Agent":'Sitemap crawler'})
+if arg.parserobots:
+	if arg.domain[len(arg.domain)-1] != "/":
+		arg.domain += "/"
+	request = Request(arg.domain+"robots.txt", headers={"User-Agent":'Sitemap crawler'})
 	rp = RobotFileParser()
-	rp.set_url(arg['domain']+"robots.txt")
+	rp.set_url(arg.domain+"robots.txt")
 	rp.read()
 
 
@@ -135,7 +139,7 @@ while tocrawl:
 		msg = response.read()
 		response.close()
 	except Exception as e:
-		if arg['debug']:
+		if arg.debug:
 			print ("{1} ==> {0}".format(e, crawling))
 		continue
 
@@ -160,12 +164,12 @@ while tocrawl:
 		domain_link = parsed_link.netloc
 		target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
-		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg['parserobots'], rp, link,arg['debug']) and ("javascript:" not in link) and (target_extension not in arg['skipext']) and (exclude_url(arg['exclude'], link)):
+		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link,arg.debug) and ("javascript:" not in link) and (target_extension not in arg.skipext) and (exclude_url(arg.exclude, link)):
 			print ("<url><loc>"+link+"</loc></url>", file=output_file)
 			tocrawl.add(link)
 print (footer, file=output_file)
 
-if arg['debug']:
+if arg.debug:
 	print ("Number of link crawled : {0}".format(len(crawled)))
 
 if output_file:

@@ -6,7 +6,7 @@
 				],
 	"parserobots":true,
 	"debug":false,
-	"output":"",
+	"output":false,
 	"exclude":	[
 				"action=edit"
 				]
