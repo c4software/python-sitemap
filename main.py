@@ -71,7 +71,6 @@ dict_arg = arg.__dict__
 for argument in arg.__dict__:
 	if dict_arg[argument] is not (None or ""):
 		try:
-			print (type(config[argument]).__name__)
 			if type(config[argument]).__name__ == 'list':
 				config[argument].extend(dict_arg[argument])
 			else:
