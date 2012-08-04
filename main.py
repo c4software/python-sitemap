@@ -82,7 +82,6 @@ for argument in dict_arg:
 	# 		config[argument] = dict_arg[argument]
 	# 	# except:
 	# 	# 	pass
-print (arg)
 if arg.debug:
 	print ("Configuration : ")
 	print (arg)
