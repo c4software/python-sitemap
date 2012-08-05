@@ -6,13 +6,15 @@ from urllib.parse import urlparse
 import argparse
 import os
 
-def can_fetch(parserobots, rp, link):
+import json
+
+def can_fetch(parserobots, rp, link, debug=False):
 	try:
 		if parserobots:
 			if rp.can_fetch("*", link):
 				return True
 			else:
-				if arg.debug:
+				if debug:
 					print ("Crawling of {0} disabled by robots.txt".format(link))
 				return False
 
@@ -22,7 +24,7 @@ def can_fetch(parserobots, rp, link):
 		return True
 	except:
 		# On error continue!
-		if arg.debug:
+		if debug:
 			print ("Error during parsing robots.txt")
 		return True
 
@@ -38,26 +40,62 @@ def exclude_url(exclude, link):
 
 # Gestion des parametres
 parser = argparse.ArgumentParser(version="0.1",description='Crawler pour la creation de site map')
-parser.add_argument('--domain', action="store", default="",required=True, help="Target domain (ex: http://blog.lesite.us)")
+
 parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('--output', action="store", default=None, help="Output file")
-parser.add_argument('--exclude', action="append", default=[], required=False, help="Regular expression for exclude URL")
+parser.add_argument('--exclude', action="append", default=[], required=False, help="Exclude Url if contain")
+
+group = parser.add_mutually_exclusive_group()
+group.add_argument('--config', action="store", default=None, help="Configuration file in json format")
+group.add_argument('--domain', action="store", default="", help="Target domain (ex: http://blog.lesite.us)")
 
 arg = parser.parse_args()
 
-outputFile = None
-if arg.output is not None:
+# Read the config file if needed
+if arg.config is not None:
 	try:
-		outputFile = open(arg.output, 'w')
+		config_data=open(arg.config,'r')
+		config = json.load(config_data)
+		config_data.close()
+	except:
+		if arg.debug:
+			print ("Bad or unavailable config file")
+		config = {}
+else:
+	config = {}
+
+# Overload config with flag parameters
+dict_arg = arg.__dict__
+for argument in dict_arg:
+	if argument in config:
+		if type(config[argument]).__name__ == 'list':
+			dict_arg[argument].extend(config[argument])
+		else:
+			dict_arg[argument] = config[argument]
+	# if dict_arg[argument] is not (None or ""):
+	# 	# try:
+	# 	if "argument" in config and type(config[argument]).__name__ == 'list':
+	# 		config[argument].extend(dict_arg[argument])
+	# 	elif "argument" in config:
+	# 		config[argument] = dict_arg[argument]
+	# 	# except:
+	# 	# 	pass
+if arg.debug:
+	print ("Configuration : ")
+	print (arg)
+
+output_file = None
+if arg.output:
+	try:
+		output_file = open(arg.output, 'w')
 	except:
 		if not arg.debug:
 			print ("Output file not available.")
 			exit(255)
 		else:
 			print ("Continue without output file.")
-
 
 tocrawl = set([arg.domain])
 crawled = set([])
@@ -89,7 +127,7 @@ if arg.parserobots:
 	rp.read()
 
 
-print (header, file=outputFile)
+print (header, file=output_file)
 while tocrawl:
 	crawling = tocrawl.pop()
 
@@ -125,10 +163,13 @@ while tocrawl:
 		domain_link = parsed_link.netloc
 		target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
-		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link) and ("javascript:" not in link) and (target_extension not in arg.skipext) and (exclude_url(arg.exclude, link)):
-			print ("<url><loc>"+link+"</loc></url>", file=outputFile)
+		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link,arg.debug) and ("javascript:" not in link) and (target_extension not in arg.skipext) and (exclude_url(arg.exclude, link)):
+			print ("<url><loc>"+link+"</loc></url>", file=output_file)
 			tocrawl.add(link)
-print (footer, file=outputFile)
+print (footer, file=output_file)
 
 if arg.debug:
 	print ("Number of link crawled : {0}".format(len(crawled)))
+
+if output_file:
+	output_file.close()
