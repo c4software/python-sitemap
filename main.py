@@ -125,7 +125,7 @@ if arg.parserobots:
 	rp.set_url(arg.domain+"robots.txt")
 	rp.read()
 
-
+responseCode={}
 print (header, file=output_file)
 while tocrawl:
 	crawling = tocrawl.pop()
@@ -134,7 +134,15 @@ while tocrawl:
 	try:
 		request = Request(crawling, headers={"User-Agent":'Sitemap crawler'})
 		response = urlopen(request)
-		msg = response.read()
+		if response.getcode() in responseCode:
+			responseCode[response.getcode()]+=1
+		else:
+			responseCode[response.getcode()] = 0
+		if response.getcode()==200:
+			msg = response.read()
+		else:
+			msg = ""
+
 		response.close()
 	except Exception as e:
 		if arg.debug:
@@ -169,6 +177,9 @@ print (footer, file=output_file)
 
 if arg.debug:
 	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
+
+	for code in responseCode:
+		logging.debug ("Nb Code HTTP {0} : {1}".format(code, responseCode[code]))
 
 if output_file:
 	output_file.close()
