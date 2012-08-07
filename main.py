@@ -7,6 +7,7 @@ import argparse
 import os
 
 import json
+import logging
 
 def can_fetch(parserobots, rp, link, debug=False):
 	try:
@@ -15,7 +16,7 @@ def can_fetch(parserobots, rp, link, debug=False):
 				return True
 			else:
 				if debug:
-					print ("Crawling of {0} disabled by robots.txt".format(link))
+					logging.debug ("Crawling of {0} disabled by robots.txt".format(link))
 				return False
 
 		if not parserobots:
@@ -25,7 +26,7 @@ def can_fetch(parserobots, rp, link, debug=False):
 	except:
 		# On error continue!
 		if debug:
-			print ("Error during parsing robots.txt")
+			logging.debug ("Error during parsing robots.txt")
 		return True
 
 
@@ -61,30 +62,29 @@ if arg.config is not None:
 		config_data.close()
 	except:
 		if arg.debug:
-			print ("Bad or unavailable config file")
+			logging.debug ("Bad or unavailable config file")
 		config = {}
 else:
 	config = {}
 
 # Overload config with flag parameters
 dict_arg = arg.__dict__
-for argument in dict_arg:
-	if argument in config:
-		if type(config[argument]).__name__ == 'list':
+for argument in config:
+	if argument in dict_arg:
+		if type(dict_arg[argument]).__name__ == 'list':
 			dict_arg[argument].extend(config[argument])
+		elif type(dict_arg[argument]).__name__ == 'bool':
+			if dict_arg[argument]:
+				dict_arg[argument] = True
 		else:
 			dict_arg[argument] = config[argument]
-	# if dict_arg[argument] is not (None or ""):
-	# 	# try:
-	# 	if "argument" in config and type(config[argument]).__name__ == 'list':
-	# 		config[argument].extend(dict_arg[argument])
-	# 	elif "argument" in config:
-	# 		config[argument] = dict_arg[argument]
-	# 	# except:
-	# 	# 	pass
+	else:
+		logging.error ("Unknown flag in JSON")
+
 if arg.debug:
-	print ("Configuration : ")
-	print (arg)
+	logging.basicConfig(level=logging.DEBUG)
+	logging.debug ("Configuration : ")
+	logging.debug (arg)
 
 output_file = None
 if arg.output:
@@ -92,18 +92,17 @@ if arg.output:
 		output_file = open(arg.output, 'w')
 	except:
 		if not arg.debug:
-			print ("Output file not available.")
+			logging.debug ("Output file not available.")
 			exit(255)
 		else:
-			print ("Continue without output file.")
+			logging.debug ("Continue without output file.")
 
 tocrawl = set([arg.domain])
 crawled = set([])
 # TODO also search for window.location={.*?}
 linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
 
-header = """
-<?xml version="1.0" encoding="UTF-8"?>
+header = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset
       xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -115,7 +114,7 @@ footer = "</urlset>"
 try:
 	target_domain = urlparse(arg.domain)[1]
 except:
-	print ("Invalid domain")
+	logging.debug ("Invalid domain")
 
 rp = None
 if arg.parserobots:
@@ -139,7 +138,7 @@ while tocrawl:
 		response.close()
 	except Exception as e:
 		if arg.debug:
-			print ("{1} ==> {0}".format(e, crawling))
+			logging.debug ("{1} ==> {0}".format(e, crawling))
 		continue
 
 	
@@ -169,7 +168,7 @@ while tocrawl:
 print (footer, file=output_file)
 
 if arg.debug:
-	print ("Number of link crawled : {0}".format(len(crawled)))
+	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
 
 if output_file:
 	output_file.close()
