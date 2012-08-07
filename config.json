@@ -5,7 +5,7 @@
 					"xml"
 				],
 	"parserobots":true,
-	"debug":false,
+	"debug":true,
 	"output":false,
 	"exclude":	[
 				"action=edit"

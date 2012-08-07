@@ -76,11 +76,13 @@ for argument in config:
 		elif type(dict_arg[argument]).__name__ == 'bool':
 			if dict_arg[argument]:
 				dict_arg[argument] = True
+			else:
+				dict_arg[argument] = config[argument]
 		else:
 			dict_arg[argument] = config[argument]
 	else:
 		logging.error ("Unknown flag in JSON")
-
+		
 if arg.debug:
 	logging.basicConfig(level=logging.DEBUG)
 	logging.debug ("Configuration : ")
