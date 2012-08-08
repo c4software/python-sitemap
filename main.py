@@ -133,17 +133,19 @@ while tocrawl:
 	crawling = tocrawl.pop()
 
 	url = urlparse(crawling)
+	crawled.add(crawling)
 	try:
 		request = Request(crawling, headers={"User-Agent":'Sitemap crawler'})
 		response = urlopen(request)
 		if response.getcode() in responseCode:
 			responseCode[response.getcode()]+=1
 		else:
-			responseCode[response.getcode()] = 0
+			responseCode[response.getcode()] = 1
 		if response.getcode()==200:
 			msg = response.read()
 		else:
-			msg = ""
+			response.close()
+			continue
 
 		response.close()
 	except Exception as e:
@@ -151,9 +153,9 @@ while tocrawl:
 			logging.debug ("{1} ==> {0}".format(e, crawling))
 		continue
 
-	
+	print ("<url><loc>"+url.geturl()+"</loc></url>", file=output_file)
+	output_file.flush()
 	links = linkregex.findall(msg)
-	crawled.add(crawling)
 	for link in links:
 		link = link.decode("utf-8")
 		if link.startswith('/'):
@@ -173,7 +175,6 @@ while tocrawl:
 		target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
 		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link,arg.debug) and ("javascript:" not in link) and (target_extension not in arg.skipext) and (exclude_url(arg.exclude, link)):
-			print ("<url><loc>"+link+"</loc></url>", file=output_file)
 			tocrawl.add(link)
 print (footer, file=output_file)
 
