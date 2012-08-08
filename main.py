@@ -139,7 +139,7 @@ while tocrawl:
 		if response.getcode() in responseCode:
 			responseCode[response.getcode()]+=1
 		else:
-			responseCode[response.getcode()] = 0
+			responseCode[response.getcode()] = 1
 		if response.getcode()==200:
 			msg = response.read()
 		else:
