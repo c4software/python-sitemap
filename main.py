@@ -102,6 +102,7 @@ if arg.output:
 
 tocrawl = set([arg.domain])
 crawled = set([])
+excluded = set([])
 # TODO also search for window.location={.*?}
 linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
 
@@ -129,7 +130,7 @@ if arg.parserobots:
 	rp.read()
 
 responseCode={}
-nbUrl=0
+nbUrl=1
 nbRp=0
 print (header, file=output_file)
 while tocrawl:
@@ -203,20 +204,28 @@ while tocrawl:
 			continue
 		if (link in tocrawl):
 			continue
+		if (link in excluded):
+			continue
 		if (domain_link != target_domain):
+			continue
+		if ("javascript" in link):
 			continue
 		
 		# Count one more URL
 		nbUrl+=1
 
 		if (can_fetch(arg.parserobots, rp, link, arg.debug) == False):
+			if link not in excluded:
+				excluded.add(link)
 			nbRp+=1
 			continue
-		if ("javascript" in link):
-			continue
 		if (target_extension in arg.skipext):
+			if link not in excluded:
+				excluded.add(link)
 			continue
 		if (exclude_url(arg.exclude, link)==False):
+			if link not in excluded:
+				excluded.add(link)
 			continue
 
 		tocrawl.add(link)
