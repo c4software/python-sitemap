@@ -47,23 +47,24 @@ parser.add_argument('--parserobots', action="store_true", default=False, require
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('--output', action="store", default=None, help="Output file")
 parser.add_argument('--exclude', action="append", default=[], required=False, help="Exclude Url if contain")
+parser.add_argument('--drop', action="append", default=[], required=False, help="Drop a string from the url")
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--config', action="store", default=None, help="Configuration file in json format")
 group.add_argument('--domain', action="store", default="", help="Target domain (ex: http://blog.lesite.us)")
 
 arg = parser.parse_args()
-
 # Read the config file if needed
 if arg.config is not None:
 	try:
 		config_data=open(arg.config,'r')
 		config = json.load(config_data)
 		config_data.close()
-	except:
+	except Exception as e:
 		if arg.debug:
 			logging.debug ("Bad or unavailable config file")
 		config = {}
+		print(e)
 else:
 	config = {}
 
@@ -128,33 +129,52 @@ if arg.parserobots:
 	rp.read()
 
 responseCode={}
+nbUrl=0
+nbRp=0
 print (header, file=output_file)
 while tocrawl:
 	crawling = tocrawl.pop()
 
+
 	url = urlparse(crawling)
 	crawled.add(crawling)
+	
 	try:
 		request = Request(crawling, headers={"User-Agent":'Sitemap crawler'})
+		# TODO : The urlopen() function has been removed in Python 3 in favor of urllib2.urlopen()
 		response = urlopen(request)
+	except Exception as e:
+		if hasattr(e,'code'):
+			if e.code in responseCode:
+				responseCode[e.code]+=1
+			else:
+				responseCode[e.code]=1
+		#else:
+		#	responseCode['erreur']+=1
+		if arg.debug:
+			logging.debug ("{1} ==> {0}".format(e, crawling))
+		response.close()
+		continue
+
+	# Read the response
+	try:
+		msg = response.read()
 		if response.getcode() in responseCode:
 			responseCode[response.getcode()]+=1
 		else:
-			responseCode[response.getcode()] = 1
-		if response.getcode()==200:
-			msg = response.read()
-		else:
-			response.close()
-			continue
-
+			responseCode[response.getcode()]=1
 		response.close()
 	except Exception as e:
 		if arg.debug:
-			logging.debug ("{1} ==> {0}".format(e, crawling))
+			logging.debug ("{1} ===> {0}".format(e, crawling))
 		continue
 
+
 	print ("<url><loc>"+url.geturl()+"</loc></url>", file=output_file)
-	output_file.flush()
+	if output_file:
+		output_file.flush()
+
+	# Found links
 	links = linkregex.findall(msg)
 	for link in links:
 		link = link.decode("utf-8")
@@ -169,17 +189,44 @@ while tocrawl:
 		if "#" in link:
 			link = link[:link.index('#')]
 
+		# Drop attributes if needed
+		if arg.drop is not None:
+			for toDrop in arg.drop:
+				link=re.sub(toDrop,'',link)
+
 		# Parse the url to get domain and file extension
 		parsed_link = urlparse(link)
 		domain_link = parsed_link.netloc
 		target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
-		if (link not in crawled) and (link not in tocrawl) and (domain_link == target_domain) and can_fetch(arg.parserobots, rp, link,arg.debug) and ("javascript:" not in link) and (target_extension not in arg.skipext) and (exclude_url(arg.exclude, link)):
-			tocrawl.add(link)
+		if (link in crawled):
+			continue
+		if (link in tocrawl):
+			continue
+		if (domain_link != target_domain):
+			continue
+		
+		# Count one more URL
+		nbUrl+=1
+
+		if (can_fetch(arg.parserobots, rp, link, arg.debug) == False):
+			nbRp+=1
+			continue
+		if ("javascript" in link):
+			continue
+		if (target_extension in arg.skipext):
+			continue
+		if (exclude_url(arg.exclude, link)==False):
+			continue
+
+		tocrawl.add(link)
 print (footer, file=output_file)
 
 if arg.debug:
+	logging.debug ("Number of found URL : {0}".format(nbUrl))
 	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
+	if arg.parserobots:
+		logging.debug ("Number of link block by robots.txt : {0}".format(nbRp))
 
 	for code in responseCode:
 		logging.debug ("Nb Code HTTP {0} : {1}".format(code, responseCode[code]))
