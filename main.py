@@ -129,9 +129,9 @@ if arg.parserobots:
 	rp.set_url(arg.domain+"robots.txt")
 	rp.read()
 
-responseCode={}
-nbUrl=1
-nbRp=0
+response_code={}
+nb_url=1 # Number of url.
+nb_rp=0 # Number of url blocked by the robots.txt
 print (header, file=output_file)
 while tocrawl:
 	crawling = tocrawl.pop()
@@ -146,12 +146,12 @@ while tocrawl:
 		response = urlopen(request)
 	except Exception as e:
 		if hasattr(e,'code'):
-			if e.code in responseCode:
-				responseCode[e.code]+=1
+			if e.code in response_code:
+				response_code[e.code]+=1
 			else:
-				responseCode[e.code]=1
+				response_code[e.code]=1
 		#else:
-		#	responseCode['erreur']+=1
+		#	response_code['erreur']+=1
 		if arg.debug:
 			logging.debug ("{1} ==> {0}".format(e, crawling))
 		response.close()
@@ -160,10 +160,10 @@ while tocrawl:
 	# Read the response
 	try:
 		msg = response.read()
-		if response.getcode() in responseCode:
-			responseCode[response.getcode()]+=1
+		if response.getcode() in response_code:
+			response_code[response.getcode()]+=1
 		else:
-			responseCode[response.getcode()]=1
+			response_code[response.getcode()]=1
 		response.close()
 	except Exception as e:
 		if arg.debug:
@@ -212,18 +212,23 @@ while tocrawl:
 			continue
 		
 		# Count one more URL
-		nbUrl+=1
+		nb_url+=1
 
-		if (can_fetch(arg.parserobots, rp, link, arg.debug) == False):
+		# Check if the navigation is allowed by the robots.txt
+		if (not can_fetch(arg.parserobots, rp, link, arg.debug)):
 			if link not in excluded:
 				excluded.add(link)
-			nbRp+=1
+			nb_rp+=1
 			continue
+
+		# Check if the current file extension is allowed or not.
 		if (target_extension in arg.skipext):
 			if link not in excluded:
 				excluded.add(link)
 			continue
-		if (exclude_url(arg.exclude, link)==False):
+
+		# Check if the current url doesn't contain an excluded word
+		if (not exclude_url(arg.exclude, link)):
 			if link not in excluded:
 				excluded.add(link)
 			continue
@@ -232,13 +237,13 @@ while tocrawl:
 print (footer, file=output_file)
 
 if arg.debug:
-	logging.debug ("Number of found URL : {0}".format(nbUrl))
+	logging.debug ("Number of found URL : {0}".format(nb_url))
 	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
 	if arg.parserobots:
-		logging.debug ("Number of link block by robots.txt : {0}".format(nbRp))
+		logging.debug ("Number of link block by robots.txt : {0}".format(nb_rp))
 
-	for code in responseCode:
-		logging.debug ("Nb Code HTTP {0} : {1}".format(code, responseCode[code]))
+	for code in response_code:
+		logging.debug ("Nb Code HTTP {0} : {1}".format(code, response_code[code]))
 
 if output_file:
 	output_file.close()

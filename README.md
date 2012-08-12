@@ -24,9 +24,11 @@ Skip url (by extension) (skip pdf AND xml url):
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
 
-Drop attribute from url (regexp) :
+Drop url via regexp :
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --drop "id=[0-9]{5}"
+	or (remove the index.html in the sitemap)
+	>>> python main.py --domain http://blog.lesite.us --drop "index.[a-z]{4}" 
 
 Exclude url by filter a part of it :
 
