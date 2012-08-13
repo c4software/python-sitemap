@@ -48,6 +48,7 @@ parser.add_argument('--debug', action="store_true", default=False, help="Enable 
 parser.add_argument('--output', action="store", default=None, help="Output file")
 parser.add_argument('--exclude', action="append", default=[], required=False, help="Exclude Url if contain")
 parser.add_argument('--drop', action="append", default=[], required=False, help="Drop a string from the url")
+parser.add_argument('--report', action="store_true", default=False, required=False, help="Display a report")
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--config', action="store", default=None, help="Configuration file in json format")
@@ -132,6 +133,7 @@ if arg.parserobots:
 response_code={}
 nb_url=1 # Number of url.
 nb_rp=0 # Number of url blocked by the robots.txt
+nb_exclude=0 # Number of url excluded by extension or word
 print (header, file=output_file)
 while tocrawl:
 	crawling = tocrawl.pop()
@@ -225,12 +227,14 @@ while tocrawl:
 		if (target_extension in arg.skipext):
 			if link not in excluded:
 				excluded.add(link)
+			nb_exclude+=1
 			continue
 
 		# Check if the current url doesn't contain an excluded word
 		if (not exclude_url(arg.exclude, link)):
 			if link not in excluded:
 				excluded.add(link)
+			nb_exclude+=1
 			continue
 
 		tocrawl.add(link)
@@ -239,11 +243,17 @@ print (footer, file=output_file)
 if arg.debug:
 	logging.debug ("Number of found URL : {0}".format(nb_url))
 	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
+
+if arg.report:
+	print ("Number of found URL : {0}".format(nb_url))
+	print ("Number of link crawled : {0}".format(len(crawled)))
 	if arg.parserobots:
-		logging.debug ("Number of link block by robots.txt : {0}".format(nb_rp))
+		print ("Number of link block by robots.txt : {0}".format(nb_rp))
+	if arg.skipext or arg.exclude:
+		print ("Number of link exclude : {0}".format(nb_exclude))
 
 	for code in response_code:
-		logging.debug ("Nb Code HTTP {0} : {1}".format(code, response_code[code]))
+		print ("Nb Code HTTP {0} : {1}".format(code, response_code[code]))
 
 if output_file:
 	output_file.close()

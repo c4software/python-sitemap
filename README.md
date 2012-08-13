@@ -20,6 +20,10 @@ Enable debug :
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
 
+Enable report for print summary of the crawl:
+
+	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --report
+
 Skip url (by extension) (skip pdf AND xml url):
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
