@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import argparse
 import os
+import time
 
 import json
 import logging
@@ -100,6 +101,9 @@ if arg.output:
 			exit(255)
 		else:
 			logging.debug ("Continue without output file.")
+
+if arg.debug or arg.report:
+	time_start = time.clock()
 
 tocrawl = set([arg.domain])
 crawled = set([])
@@ -240,9 +244,13 @@ while tocrawl:
 		tocrawl.add(link)
 print (footer, file=output_file)
 
+if arg.debug or arg.report:
+	time_total = time.clock() - time_start
+
 if arg.debug:
 	logging.debug ("Number of found URL : {0}".format(nb_url))
 	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
+	logging.debug ("Duration : {0}s".format(time_total))
 
 if arg.report:
 	print ("Number of found URL : {0}".format(nb_url))
@@ -254,6 +262,8 @@ if arg.report:
 
 	for code in response_code:
 		print ("Nb Code HTTP {0} : {1}".format(code, response_code[code]))
+
+	print ("Duration : {0}s".format(int(time_total)))
 
 if output_file:
 	output_file.close()
