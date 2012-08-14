@@ -142,7 +142,6 @@ while tocrawl:
 	
 	try:
 		request = Request(crawling, headers={"User-Agent":'Sitemap crawler'})
-		# TODO : The urlopen() function has been removed in Python 3 in favor of urllib2.urlopen()
 		response = urlopen(request)
 	except Exception as e:
 		if hasattr(e,'code'):
