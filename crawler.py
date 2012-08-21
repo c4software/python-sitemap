@@ -155,22 +155,19 @@ class Crawler():
 
 			# Check if the navigation is allowed by the robots.txt
 			if (not self.can_fetch(link)):
-				if link not in excluded:
-					self.excluded.add(link)
+				self.exclude_link(link)
 				self.nb_rp+=1
 				continue
 
 			# Check if the current file extension is allowed or not.
 			if (target_extension in self.skipext):
-				if link not in excluded:
-					self.excluded.add(link)
+				self.exclude_link(link)
 				self.nb_exclude+=1
 				continue
 
 			# Check if the current url doesn't contain an excluded word
 			if (not self.exclude_url(link)):
-				if link not in self.excluded:
-					self.excluded.add(link)
+				self.exclude_link(link)
 				self.nb_exclude+=1
 				continue
 
@@ -181,6 +178,10 @@ class Crawler():
 	def __continue_crawling(self):
 		if self.tocrawl:
 			self.__crawling()
+
+	def exclude_link(self,link):
+		if link not in self.excluded:
+			self.excluded.add(link)
 
 	def checkRobots(self):
 		if self.domain[len(self.domain)-1] != "/":
