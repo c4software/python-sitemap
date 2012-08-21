@@ -49,3 +49,6 @@ del(dict_arg['config'])
 
 crawl = crawler.Crawler(**dict_arg)
 crawl.run()
+
+if arg.report:
+	crawl.make_report()
