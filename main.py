@@ -1,44 +1,9 @@
-import re
-from urllib.request import urlopen, Request
-from urllib.robotparser import RobotFileParser
-from urllib.parse import urlparse
-
 import argparse
 import os
-import time
 
 import json
-import logging
 
-def can_fetch(parserobots, rp, link, debug=False):
-	try:
-		if parserobots:
-			if rp.can_fetch("*", link):
-				return True
-			else:
-				if debug:
-					logging.debug ("Crawling of {0} disabled by robots.txt".format(link))
-				return False
-
-		if not parserobots:
-			return True
-
-		return True
-	except:
-		# On error continue!
-		if debug:
-			logging.debug ("Error during parsing robots.txt")
-		return True
-
-
-def exclude_url(exclude, link):
-	if exclude:
-		for ex in exclude:
-			if ex in link:
-				return False
-		return True
-	else:
-		return True
+import crawler
 
 # Gestion des parametres
 parser = argparse.ArgumentParser(version="0.1",description='Crawler pour la creation de site map')
@@ -63,10 +28,7 @@ if arg.config is not None:
 		config = json.load(config_data)
 		config_data.close()
 	except Exception as e:
-		if arg.debug:
-			logging.debug ("Bad or unavailable config file")
 		config = {}
-		print(e)
 else:
 	config = {}
 
@@ -83,186 +45,10 @@ for argument in config:
 				dict_arg[argument] = config[argument]
 		else:
 			dict_arg[argument] = config[argument]
-	else:
-		logging.error ("Unknown flag in JSON")
-		
-if arg.debug:
-	logging.basicConfig(level=logging.DEBUG)
-	logging.debug ("Configuration : ")
-	logging.debug (arg)
+del(dict_arg['config'])
 
-output_file = None
-if arg.output:
-	try:
-		output_file = open(arg.output, 'w')
-	except:
-		if not arg.debug:
-			logging.debug ("Output file not available.")
-			exit(255)
-		else:
-			logging.debug ("Continue without output file.")
-
-if arg.debug or arg.report:
-	time_start = time.clock()
-
-tocrawl = set([arg.domain])
-crawled = set([])
-excluded = set([])
-# TODO also search for window.location={.*?}
-linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
-
-header = """<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-"""
-footer = "</urlset>"
-
-try:
-	target_domain = urlparse(arg.domain)[1]
-except:
-	logging.debug ("Invalid domain")
-
-rp = None
-if arg.parserobots:
-	if arg.domain[len(arg.domain)-1] != "/":
-		arg.domain += "/"
-	request = Request(arg.domain+"robots.txt", headers={"User-Agent":'Sitemap crawler'})
-	rp = RobotFileParser()
-	rp.set_url(arg.domain+"robots.txt")
-	rp.read()
-
-response_code={}
-nb_url=1 # Number of url.
-nb_rp=0 # Number of url blocked by the robots.txt
-nb_exclude=0 # Number of url excluded by extension or word
-print (header, file=output_file)
-while tocrawl:
-	crawling = tocrawl.pop()
-
-
-	url = urlparse(crawling)
-	crawled.add(crawling)
-	
-	try:
-		request = Request(crawling, headers={"User-Agent":'Sitemap crawler'})
-		response = urlopen(request)
-	except Exception as e:
-		if hasattr(e,'code'):
-			if e.code in response_code:
-				response_code[e.code]+=1
-			else:
-				response_code[e.code]=1
-		#else:
-		#	response_code['erreur']+=1
-		if arg.debug:
-			logging.debug ("{1} ==> {0}".format(e, crawling))
-		response.close()
-		continue
-
-	# Read the response
-	try:
-		msg = response.read()
-		if response.getcode() in response_code:
-			response_code[response.getcode()]+=1
-		else:
-			response_code[response.getcode()]=1
-		response.close()
-	except Exception as e:
-		if arg.debug:
-			logging.debug ("{1} ===> {0}".format(e, crawling))
-		continue
-
-
-	print ("<url><loc>"+url.geturl()+"</loc></url>", file=output_file)
-	if output_file:
-		output_file.flush()
-
-	# Found links
-	links = linkregex.findall(msg)
-	for link in links:
-		link = link.decode("utf-8")
-		if link.startswith('/'):
-			link = 'http://' + url[1] + link
-		elif link.startswith('#'):
-			link = 'http://' + url[1] + url[2] + link
-		elif not link.startswith('http'):
-			link = 'http://' + url[1] + '/' + link
-		
-		# Remove the anchor part if needed
-		if "#" in link:
-			link = link[:link.index('#')]
-
-		# Drop attributes if needed
-		if arg.drop is not None:
-			for toDrop in arg.drop:
-				link=re.sub(toDrop,'',link)
-
-		# Parse the url to get domain and file extension
-		parsed_link = urlparse(link)
-		domain_link = parsed_link.netloc
-		target_extension = os.path.splitext(parsed_link.path)[1][1:]
-
-		if (link in crawled):
-			continue
-		if (link in tocrawl):
-			continue
-		if (link in excluded):
-			continue
-		if (domain_link != target_domain):
-			continue
-		if ("javascript" in link):
-			continue
-		
-		# Count one more URL
-		nb_url+=1
-
-		# Check if the navigation is allowed by the robots.txt
-		if (not can_fetch(arg.parserobots, rp, link, arg.debug)):
-			if link not in excluded:
-				excluded.add(link)
-			nb_rp+=1
-			continue
-
-		# Check if the current file extension is allowed or not.
-		if (target_extension in arg.skipext):
-			if link not in excluded:
-				excluded.add(link)
-			nb_exclude+=1
-			continue
-
-		# Check if the current url doesn't contain an excluded word
-		if (not exclude_url(arg.exclude, link)):
-			if link not in excluded:
-				excluded.add(link)
-			nb_exclude+=1
-			continue
-
-		tocrawl.add(link)
-print (footer, file=output_file)
-
-if arg.debug or arg.report:
-	time_total = time.clock() - time_start
-
-if arg.debug:
-	logging.debug ("Number of found URL : {0}".format(nb_url))
-	logging.debug ("Number of link crawled : {0}".format(len(crawled)))
-	logging.debug ("Duration : {0}s".format(time_total))
+crawl = crawler.Crawler(**dict_arg)
+crawl.run()
 
 if arg.report:
-	print ("Number of found URL : {0}".format(nb_url))
-	print ("Number of link crawled : {0}".format(len(crawled)))
-	if arg.parserobots:
-		print ("Number of link block by robots.txt : {0}".format(nb_rp))
-	if arg.skipext or arg.exclude:
-		print ("Number of link exclude : {0}".format(nb_exclude))
-
-	for code in response_code:
-		print ("Nb Code HTTP {0} : {1}".format(code, response_code[code]))
-
-	print ("Duration : {0}s".format(int(time_total)))
-
-if output_file:
-	output_file.close()
+	crawl.make_report()
