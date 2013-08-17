@@ -119,7 +119,7 @@ class Crawler():
 			return self.__continue_crawling()
 
 
-		print ("<url><loc>"+url.geturl()+"</loc><lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S')+"</lastmod></url>", file=self.output_file)
+		print ("<url><loc>"+url.geturl()+"</loc><lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod></url>", file=self.output_file)
 		if self.output_file:
 			self.output_file.flush()
 
