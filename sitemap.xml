@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+<url><loc>http://www.afonepay.com</loc><lastmod>2013-07-03T07:22:44+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/psp.html</loc><lastmod>2013-07-03T07:22:44+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/api.html</loc><lastmod>2013-07-03T07:22:44+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/./psp.html</loc><lastmod>2013-07-03T07:22:44+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/terminologie.html</loc><lastmod>2013-07-03T07:22:46+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/./psp_lib_php.html</loc><lastmod>2013-07-03T07:22:46+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/./api.html</loc><lastmod>2013-07-03T07:22:44+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/./terminologie.html</loc><lastmod>2013-07-03T07:22:46+00:00</lastmod></url>
+<url><loc>http://www.afonepay.com/./index.html</loc><lastmod>2013-07-03T07:22:44+00:00</lastmod></url>
+</urlset>

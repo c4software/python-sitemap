@@ -28,6 +28,9 @@ class Crawler():
 	tocrawl = set([])
 	crawled = set([])
 	excluded = set([])
+
+	marked = {}
+
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
 
@@ -94,6 +97,14 @@ class Crawler():
 					self.response_code[e.code]+=1
 				else:
 					self.response_code[e.code]=1
+
+				# Gestion des urls marked pour le reporting
+				if self.report:
+					if e.code in self.marked:
+						self.marked[e.code].append(crawling)
+					else:
+						self.marked[e.code] = [crawling]
+						
 			logging.debug ("{1} ==> {0}".format(e, crawling))
 			return self.__continue_crawling()
 
@@ -104,6 +115,7 @@ class Crawler():
 				self.response_code[response.getcode()]+=1
 			else:
 				self.response_code[response.getcode()]=1
+
 			response.close()
 
 			# Get the last modify date
@@ -234,4 +246,9 @@ class Crawler():
 
 		for code in self.response_code:
 			print ("Nb Code HTTP {0} : {1}".format(code, self.response_code[code]))
+
+		for code in self.marked:
+			print ("Paged with status {0}:".format(code))
+			for uri in self.marked[code]:
+				print ("\t- {0}".format(uri))
 			
