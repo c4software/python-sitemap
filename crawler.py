@@ -248,7 +248,7 @@ class Crawler():
 			print ("Nb Code HTTP {0} : {1}".format(code, self.response_code[code]))
 
 		for code in self.marked:
-			print ("Uri with status {0}:".format(code))
+			print ("Link with status {0}:".format(code))
 			for uri in self.marked[code]:
 				print ("\t- {0}".format(uri))
 			
