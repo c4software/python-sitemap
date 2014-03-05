@@ -76,7 +76,10 @@ class Crawler():
 		print (config.xml_header, file=self.output_file)
 
 		logging.debug("Start the crawling process")
-		self.__crawling()
+
+		while len(self.tocrawl) != 0:
+			self.__crawling()
+
 		logging.debug("Crawling as reach the end of all found link")
 
 		print (config.xml_footer, file=self.output_file)
@@ -128,7 +131,7 @@ class Crawler():
 
 		except Exception as e:
 			logging.debug ("{1} ===> {0}".format(e, crawling))
-			return self.__continue_crawling()
+			return None
 
 
 		print ("<url><loc>"+url.geturl()+"</loc><lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod></url>", file=self.output_file)
@@ -193,8 +196,8 @@ class Crawler():
 				continue
 
 			self.tocrawl.add(link)
-
-		return self.__continue_crawling()
+			
+		return None
 
 	def __continue_crawling(self):
 		if self.tocrawl:
