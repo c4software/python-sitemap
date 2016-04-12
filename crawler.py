@@ -32,7 +32,7 @@ class Crawler():
 	marked = {}
 
 	# TODO also search for window.location={.*?}
-	linkregex = re.compile(b'<a href=[\'|"](.*?)[\'"].*?>')
+	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"].*?>')
 
 	rp = None
 	response_code={}
