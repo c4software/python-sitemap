@@ -1,10 +1,11 @@
 import config
 import logging
+from urllib.parse import urljoin
 
 import re
+from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 from urllib.robotparser import RobotFileParser
-from urllib.parse import urlparse
 from datetime import datetime
 
 import os
@@ -69,7 +70,6 @@ class Crawler():
 		except:
 			raise ("Invalid domain")
 
-
 		if self.output:
 			try:
 				self.output_file = open(self.output, 'w')
@@ -78,7 +78,10 @@ class Crawler():
 				exit(255)
 
 	def run(self):
-		print (config.xml_header, file=self.output_file)
+		print(config.xml_header, file=self.output_file)
+
+		if self.parserobots:
+			self.checkRobots()
 
 		if self.verbose:
 			log_level = logging.INFO
@@ -220,11 +223,9 @@ class Crawler():
 			self.excluded.add(link)
 
 	def checkRobots(self):
-		if self.domain[len(self.domain)-1] != "/":
-			self.domain += "/"
-		request = Request(self.domain+"robots.txt", headers={"User-Agent":config.crawler_user_agent})
+		robots_url = urljoin(self.domain, "robots.txt")
 		self.rp = RobotFileParser()
-		self.rp.set_url(self.domain+"robots.txt")
+		self.rp.set_url(robots_url)
 		self.rp.read()
 
 	def can_fetch(self, link):
