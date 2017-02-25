@@ -16,9 +16,13 @@ Read a config file to set parameters:
 
 	>>> python main.py --config config.json
 
-Enable debug :
+Enable debug:
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
+
+Enable verbose output:
+
+    >>> python main.py --domain http://blog.lesite.us --output sitemap.xml --verbose
 
 Enable report for print summary of the crawl:
 

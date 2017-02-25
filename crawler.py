@@ -44,7 +44,8 @@ class Crawler():
 
 	target_domain = ""
 
-	def __init__(self, parserobots=False, output=None, report=False ,domain="", exclude=[], skipext=[], drop=[], debug=False):
+	def __init__(self, parserobots=False, output=None, report=False ,domain="",
+				 exclude=[], skipext=[], drop=[], debug=False, verbose=False):
 		self.parserobots = parserobots
 		self.output 	= output
 		self.report 	= report
@@ -53,9 +54,13 @@ class Crawler():
 		self.skipext 	= skipext
 		self.drop		= drop
 		self.debug		= debug
+		self.verbose    = verbose
 
 		if self.debug:
-			logging.basicConfig(level=logging.DEBUG)
+			log_level = logging.DEBUG
+		else:
+			log_level = logging.INFO
+		logging.basicConfig(level=log_level)
 
 		self.tocrawl = set([domain])
 
@@ -75,12 +80,16 @@ class Crawler():
 	def run(self):
 		print (config.xml_header, file=self.output_file)
 
-		logging.debug("Start the crawling process")
+		if self.verbose:
+			log_level = logging.INFO
+		else:
+			log_level = logging.DEBUG
+		logging.log(log_level, "Start the crawling process")
 
 		while len(self.tocrawl) != 0:
 			self.__crawling()
 
-		logging.debug("Crawling as reach the end of all found link")
+		logging.log(log_level, "Crawling has reached end of all found links")
 
 		print (config.xml_footer, file=self.output_file)
 
@@ -90,8 +99,11 @@ class Crawler():
 
 		url = urlparse(crawling)
 		self.crawled.add(crawling)
+		if self.verbose:
+			logging.info("Crawling #{}: {}".format(len(self.crawled),
+												   url.geturl()))
 		request = Request(crawling, headers={"User-Agent":config.crawler_user_agent})
-		
+
 		try:
 			response = urlopen(request)
 		except Exception as e:
