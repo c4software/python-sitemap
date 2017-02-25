@@ -11,8 +11,7 @@ parser = argparse.ArgumentParser(description='Crawler pour la creation de site m
 parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
-parser.add_argument('-v', '--verbose', action="store_true",
-					help="Enable verbose output")
+parser.add_argument('-v', '--verbose', action="store_true", help="Enable verbose output")
 parser.add_argument('--output', action="store", default=None, help="Output file")
 parser.add_argument('--exclude', action="append", default=[], required=False, help="Exclude Url if contain")
 parser.add_argument('--drop', action="append", default=[], required=False, help="Drop a string from the url")
