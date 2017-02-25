@@ -1,16 +1,17 @@
 import config
 import logging
+from urllib.parse import urljoin
 
 import re
+from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 from urllib.robotparser import RobotFileParser
-from urllib.parse import urlparse
 from datetime import datetime
 
 import os
 
 class Crawler():
-	
+
 	# Variables
 	parserobots = False
 	output 	= None
@@ -22,7 +23,7 @@ class Crawler():
 	exclude = []
 	skipext = []
 	drop    = []
-	
+
 	debug	= False
 
 	tocrawl = set([])
@@ -39,12 +40,13 @@ class Crawler():
 	nb_url=1 # Number of url.
 	nb_rp=0 # Number of url blocked by the robots.txt
 	nb_exclude=0 # Number of url excluded by extension or word
-	
+
 	output_file = None
 
 	target_domain = ""
 
-	def __init__(self, parserobots=False, output=None, report=False ,domain="", exclude=[], skipext=[], drop=[], debug=False):
+	def __init__(self, parserobots=False, output=None, report=False ,domain="",
+				 exclude=[], skipext=[], drop=[], debug=False, verbose=False):
 		self.parserobots = parserobots
 		self.output 	= output
 		self.report 	= report
@@ -53,34 +55,44 @@ class Crawler():
 		self.skipext 	= skipext
 		self.drop		= drop
 		self.debug		= debug
+		self.verbose    = verbose
 
 		if self.debug:
-			logging.basicConfig(level=logging.DEBUG)
+			log_level = logging.DEBUG
+		elif self.verbose:
+			log_level = logging.INFO
+		else:
+			log_level = logging.ERROR
+
+		logging.basicConfig(level=log_level)
 
 		self.tocrawl = set([domain])
 
 		try:
 			self.target_domain = urlparse(domain)[1]
 		except:
+			logging.error("Invalide domain")
 			raise ("Invalid domain")
-
 
 		if self.output:
 			try:
 				self.output_file = open(self.output, 'w')
 			except:
-				logging.debug ("Output file not available.")
+				logging.error ("Output file not available.")
 				exit(255)
 
 	def run(self):
-		print (config.xml_header, file=self.output_file)
+		print(config.xml_header, file=self.output_file)
 
-		logging.debug("Start the crawling process")
+		if self.parserobots:
+			self.check_robots()
+
+		logging.info("Start the crawling process")
 
 		while len(self.tocrawl) != 0:
 			self.__crawling()
 
-		logging.debug("Crawling as reach the end of all found link")
+		logging.info("Crawling has reached end of all found links")
 
 		print (config.xml_footer, file=self.output_file)
 
@@ -90,8 +102,9 @@ class Crawler():
 
 		url = urlparse(crawling)
 		self.crawled.add(crawling)
+		logging.info("Crawling #{}: {}".format(len(self.crawled), url.geturl()))
 		request = Request(crawling, headers={"User-Agent":config.crawler_user_agent})
-		
+
 		try:
 			response = urlopen(request)
 		except Exception as e:
@@ -142,14 +155,14 @@ class Crawler():
 		links = self.linkregex.findall(msg)
 		for link in links:
 			link = link.decode("utf-8")
-			#logging.debug("Found : {0}".format(link))		
+			logging.debug("Found : {0}".format(link))
 			if link.startswith('/'):
 				link = 'http://' + url[1] + link
 			elif link.startswith('#'):
 				link = 'http://' + url[1] + url[2] + link
 			elif not link.startswith('http'):
 				link = 'http://' + url[1] + '/' + link
-			
+
 			# Remove the anchor part if needed
 			if "#" in link:
 				link = link[:link.index('#')]
@@ -173,7 +186,7 @@ class Crawler():
 				continue
 			if ("javascript" in link):
 				continue
-			
+
 			# Count one more URL
 			self.nb_url+=1
 
@@ -196,7 +209,7 @@ class Crawler():
 				continue
 
 			self.tocrawl.add(link)
-			
+
 		return None
 
 	def __continue_crawling(self):
@@ -207,12 +220,10 @@ class Crawler():
 		if link not in self.excluded:
 			self.excluded.add(link)
 
-	def checkRobots(self):
-		if self.domain[len(self.domain)-1] != "/":
-			self.domain += "/"
-		request = Request(self.domain+"robots.txt", headers={"User-Agent":config.crawler_user_agent})
+	def check_robots(self):
+		robots_url = urljoin(self.domain, "robots.txt")
 		self.rp = RobotFileParser()
-		self.rp.set_url(self.domain+"robots.txt")
+		self.rp.set_url(robots_url)
 		self.rp.read()
 
 	def can_fetch(self, link):
@@ -254,4 +265,3 @@ class Crawler():
 			print ("Link with status {0}:".format(code))
 			for uri in self.marked[code]:
 				print ("\t- {0}".format(uri))
-			
