@@ -62,4 +62,4 @@ Run with custom domain :
 Run with config file and output :
 ***You need to configure config.json file before***
 	
-	>>> docker run -it -v `pwd`/config/:/config/ -v `pwd`:/home/python-sitemap/output/ python-sitemap --config config/config.json
+	>>> docker run -it -v `pwd`/config/:/config/ -v `pwd`:/home/python-sitemap/ python-sitemap --config config/config.json

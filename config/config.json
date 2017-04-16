@@ -6,7 +6,7 @@
 				],
 	"parserobots":false,
 	"debug":true,
-	"output":"/home/python-sitemap/output/sitemap.xml",
+	"output":"sitemap.xml",
 	"exclude":	[
 				"action=edit"
 				]
