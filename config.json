@@ -4,9 +4,9 @@
 					"pdf",
 					"xml"
 				],
-	"parserobots":true,
+	"parserobots":false,
 	"debug":true,
-	"output":false,
+	"output":"sitemap.xml",
 	"exclude":	[
 				"action=edit"
 				]
