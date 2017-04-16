@@ -14,7 +14,7 @@ Advanced usage
 Read a config file to set parameters:
 ***You can overide (or add for list) any parameters define in the config.json***
 
-	>>> python main.py --config config.json
+	>>> python main.py --config config/config.json
 
 Enable debug:
 
