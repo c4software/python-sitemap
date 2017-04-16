@@ -43,3 +43,23 @@ Exclude url by filter a part of it :
 Read the robots.txt to ignore some url:
 
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --parserobots
+
+Docker usage
+--------------
+
+Build the Docker image:
+
+	>>> docker build -t python-sitemap:latest .
+
+Run with default domain :
+
+	>>> docker run -it python-sitemap
+
+Run with custom domain :
+
+	>>> docker run -it python-sitemap --domain https://www.graylog.fr
+
+Run with config file and output :
+***You need to configure config.json file before***
+	
+	>>> docker run -it -v `pwd`/config/:/config/ -v `pwd`:/home/python-sitemap/ python-sitemap --config config/config.json
