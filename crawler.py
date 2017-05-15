@@ -167,7 +167,7 @@ class Crawler():
 			images = self.imageregex.findall(msg)
 			for image in images:
 				image = image.decode("utf-8")
-				
+
 				# Append domain if not present
 				if not image.startswith(("http", "https")):
 					image = "{0}{1}".format(self.domain.strip("/"), image.replace("./", "/"))
@@ -175,6 +175,7 @@ class Crawler():
 				# Test if images as been already seen and not present in the
 				# robots file
 				if image not in self.images_found and self.can_fetch(image):
+					logging.debug("Found new image : {0}".format(image))
 					self.images_found.append(image)
 
 		# Found links
