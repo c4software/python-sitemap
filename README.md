@@ -1,65 +1,91 @@
-Python-Sitemap
-==============
+# Python-Sitemap
+
 Simple script to crawl a website and create a sitemap.xml of all public link in a website
 
 Warning : This script is designed to works with ***Python3***
 
-Simple usage
-------------
+## Simple usage
+
 	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml
 
-Advanced usage
---------------
+## Advanced usage
 
 Read a config file to set parameters:
 ***You can overide (or add for list) any parameters define in the config.json***
 
 	>>> python main.py --config config/config.json
 
-Enable debug:
+### Enable debug:
 
-	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
+  ```
+	$ python main.py --domain http://blog.lesite.us --output sitemap.xml --debug
+  ```
 
-Enable verbose output:
+### Enable verbose output:
 
-    >>> python main.py --domain http://blog.lesite.us --output sitemap.xml --verbose
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --verbose
+  ```
 
-Enable report for print summary of the crawl:
+### Enable Image Sitemap
 
-	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --report
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --images
+  ```
 
-Skip url (by extension) (skip pdf AND xml url):
+### Enable report for print summary of the crawl:
 
-	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml 
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --report
+  ```
 
-Drop a part of an url via regexp :
+### Skip url (by extension) (skip pdf AND xml url):
 
-	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --drop "id=[0-9]{5}"
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --skipext pdf --skipext xml
+  ```
 
-Exclude url by filter a part of it :
+### Drop a part of an url via regexp :
 
-	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --exclude "action=edit"
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --drop "id=[0-9]{5}"
+  ```
 
-Read the robots.txt to ignore some url:
+### Exclude url by filter a part of it :
 
-	>>> python main.py --domain http://blog.lesite.us --output sitemap.xml --parserobots
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --exclude "action=edit"
+  ```
 
-Docker usage
---------------
+### Read the robots.txt to ignore some url:
 
-Build the Docker image:
+  ```
+  $ python main.py --domain http://blog.lesite.us --output sitemap.xml --parserobots
+  ```
 
-	>>> docker build -t python-sitemap:latest .
+## Docker usage
 
-Run with default domain :
+### Build the Docker image:
 
-	>>> docker run -it python-sitemap
+  ```
+  $ docker build -t python-sitemap:latest .
+  ```
 
-Run with custom domain :
+### Run with default domain :
 
-	>>> docker run -it python-sitemap --domain https://www.graylog.fr
+  ```
+  $ docker run -it python-sitemap
+  ```
 
-Run with config file and output :
+### Run with custom domain :
+
+  ```
+  $ docker run -it python-sitemap --domain https://www.graylog.fr
+  ```
+
+### Run with config file and output :
 ***You need to configure config.json file before***
-	
-	>>> docker run -it -v `pwd`/config/:/config/ -v `pwd`:/home/python-sitemap/ python-sitemap --config config/config.json
+
+  ```
+  $ docker run -it -v `pwd`/config/:/config/ -v `pwd`:/home/python-sitemap/ python-sitemap --config config/config.json
+  ```
