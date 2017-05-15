@@ -46,7 +46,7 @@ class Crawler():
 	target_domain = ""
 
 	def __init__(self, parserobots=False, output=None, report=False ,domain="",
-				 exclude=[], skipext=[], drop=[], debug=False, verbose=False):
+				 exclude=[], skipext=[], drop=[], debug=False, verbose=False, images=False):
 		self.parserobots = parserobots
 		self.output 	= output
 		self.report 	= report
@@ -56,6 +56,7 @@ class Crawler():
 		self.drop		= drop
 		self.debug		= debug
 		self.verbose    = verbose
+		sefl.images     = images
 
 		if self.debug:
 			log_level = logging.DEBUG
