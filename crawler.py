@@ -32,8 +32,11 @@ class Crawler():
 
 	marked = {}
 
+	images_found = []
+
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"].*?>')
+	imageregex = re.compile (b'<img [^>]*src=[\'|"](.*?)[\'"].*?>')
 
 	rp = None
 	response_code={}
@@ -56,7 +59,7 @@ class Crawler():
 		self.drop		= drop
 		self.debug		= debug
 		self.verbose    = verbose
-		sefl.images     = images
+		self.images     = images
 
 		if self.debug:
 			log_level = logging.DEBUG
@@ -92,6 +95,12 @@ class Crawler():
 
 		while len(self.tocrawl) != 0:
 			self.__crawling()
+
+		# Write image into sitemap
+		for image_link in self.images_found:
+			print ("<image:image><image:loc>{0}</image:loc></image:image>".format(image_link), file=self.output_file)
+			if self.output_file:
+				self.output_file.flush()
 
 		logging.info("Crawling has reached end of all found links")
 
@@ -152,6 +161,22 @@ class Crawler():
 		if self.output_file:
 			self.output_file.flush()
 
+		# Image sitemap enabled ?
+		if self.images:
+			# Search for images in the current page.
+			images = self.imageregex.findall(msg)
+			for image in images:
+				image = image.decode("utf-8")
+				
+				# Append domain if not present
+				if not image.startswith(("http", "https")):
+					image = "{0}{1}".format(self.domain.strip("/"), image.replace("./", "/"))
+
+				# Test if images as been already seen and not present in the
+				# robots file
+				if image not in self.images_found and self.can_fetch(image):
+					self.images_found.append(image)
+
 		# Found links
 		links = self.linkregex.findall(msg)
 		for link in links:
@@ -192,7 +217,7 @@ class Crawler():
 			self.nb_url+=1
 
 			# Check if the navigation is allowed by the robots.txt
-			if (not self.can_fetch(link)):
+			if not self.can_fetch(link):
 				self.exclude_link(link)
 				self.nb_rp+=1
 				continue
