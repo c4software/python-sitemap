@@ -32,8 +32,6 @@ class Crawler():
 
 	marked = {}
 
-	images_found = []
-
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"].*?>')
 	imageregex = re.compile (b'<img [^>]*src=[\'|"](.*?)[\'"].*?>')
@@ -96,12 +94,6 @@ class Crawler():
 		while len(self.tocrawl) != 0:
 			self.__crawling()
 
-		# Write image into sitemap
-		for image_link in self.images_found:
-			print ("<image:image><image:loc>{0}</image:loc></image:image>".format(image_link), file=self.output_file)
-			if self.output_file:
-				self.output_file.flush()
-
 		logging.info("Crawling has reached end of all found links")
 
 		print (config.xml_footer, file=self.output_file)
@@ -156,27 +148,27 @@ class Crawler():
 			logging.debug ("{1} ===> {0}".format(e, crawling))
 			return None
 
-
-		print ("<url><loc>"+url.geturl()+"</loc><lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod></url>", file=self.output_file)
-		if self.output_file:
-			self.output_file.flush()
-
 		# Image sitemap enabled ?
+		image_list = "";
 		if self.images:
 			# Search for images in the current page.
 			images = self.imageregex.findall(msg)
-			for image in images:
-				image = image.decode("utf-8")
+			for image_link in list(set(images)):
+				image_link = image_link.decode("utf-8")
 
 				# Append domain if not present
-				if not image.startswith(("http", "https")):
-					image = "{0}{1}".format(self.domain.strip("/"), image.replace("./", "/"))
+				if not image_link.startswith(("http", "https")):
+					image_link = "{0}{1}".format(self.domain.strip("/"), image_link.replace("./", "/"))
 
 				# Test if images as been already seen and not present in the
-				# robots file
-				if image not in self.images_found and self.can_fetch(image):
-					logging.debug("Found new image : {0}".format(image))
-					self.images_found.append(image)
+				# robot file
+				if self.can_fetch(image_link):
+					logging.debug("Found image : {0}".format(image_link))
+					image_list = "{0}<image:image><image:loc>{1}</image:loc></image:image>".format(image_list, image_link)
+
+		print ("<url><loc>"+url.geturl()+"</loc><lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>" + image_list + "</url>", file=self.output_file)
+		if self.output_file:
+			self.output_file.flush()
 
 		# Found links
 		links = self.linkregex.findall(msg)
