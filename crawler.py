@@ -175,12 +175,13 @@ class Crawler():
 		for link in links:
 			link = link.decode("utf-8")
 			logging.debug("Found : {0}".format(link))
+
 			if link.startswith('/'):
-				link = 'http://' + url[1] + link
+				link = url.scheme + '://' + url[1] + link
 			elif link.startswith('#'):
-				link = 'http://' + url[1] + url[2] + link
-			elif not link.startswith('http'):
-				link = 'http://' + url[1] + '/' + link
+				link = url.scheme + '://' + url[1] + url[2] + link
+			elif not link.startswith(('http', "https")):
+				link = url.scheme + '://' + url[1] + '/' + link
 
 			# Remove the anchor part if needed
 			if "#" in link:
