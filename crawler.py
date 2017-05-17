@@ -8,6 +8,7 @@ from urllib.request import urlopen, Request
 from urllib.robotparser import RobotFileParser
 from datetime import datetime
 
+import mimetypes
 import os
 
 class Crawler():
@@ -215,17 +216,19 @@ class Crawler():
 			domain_link = parsed_link.netloc
 			target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
-			if (link in self.crawled):
+			if link in self.crawled:
 				continue
-			if (link in self.tocrawl):
+			if link in self.tocrawl:
 				continue
-			if (link in self.excluded):
+			if link in self.excluded:
 				continue
-			if (domain_link != self.target_domain):
+			if domain_link != self.target_domain:
 				continue
-			if ("javascript" in link):
+			if "javascript" in link:
 				continue
-			if (parsed_link.path.startswith("data:")):
+			if self.is_image(parsed_link.path):
+				continue
+			if parsed_link.path.startswith("data:"):
 				continue
 
 			# Count one more URL
@@ -252,6 +255,10 @@ class Crawler():
 			self.tocrawl.add(link)
 
 		return None
+
+	def is_image(self, path):
+		 mt,me = mimetypes.guess_type(path)
+		 return mt.startswith("image/")
 
 	def __continue_crawling(self):
 		if self.tocrawl:
