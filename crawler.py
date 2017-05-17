@@ -225,7 +225,7 @@ class Crawler():
 				continue
 			if ("javascript" in link):
 				continue
-			if (link.startswith("data:image/")):
+			if (parsed_link.path.startswith("data:")):
 				continue
 
 			# Count one more URL
