@@ -111,7 +111,7 @@ class Crawler():
 
 		# Ignore ressources listed in the not_parseable_ressources
 		# Its avoid dowloading file like pdf… etc
-		if not crawling.endswith(self.not_parseable_ressources):
+		if not url.path.endswith(self.not_parseable_ressources):
 			try:
 				response = urlopen(request)
 			except Exception as e:
