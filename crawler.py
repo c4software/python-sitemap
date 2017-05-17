@@ -32,6 +32,8 @@ class Crawler():
 
 	marked = {}
 
+	not_parseable_ressources = (".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
+
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"].*?>')
 	imageregex = re.compile (b'<img [^>]*src=[\'|"](.*?)[\'"].*?>')
@@ -107,46 +109,58 @@ class Crawler():
 		logging.info("Crawling #{}: {}".format(len(self.crawled), url.geturl()))
 		request = Request(crawling, headers={"User-Agent":config.crawler_user_agent})
 
-		try:
-			response = urlopen(request)
-		except Exception as e:
-			if hasattr(e,'code'):
-				if e.code in self.response_code:
-					self.response_code[e.code]+=1
-				else:
-					self.response_code[e.code]=1
-
-				# Gestion des urls marked pour le reporting
-				if self.report:
-					if e.code in self.marked:
-						self.marked[e.code].append(crawling)
+		# Ignore ressources listed in the not_parseable_ressources
+		# Its avoid dowloading file like pdf… etc
+		if not crawling.endswith(self.not_parseable_ressources):
+			try:
+				response = urlopen(request)
+			except Exception as e:
+				if hasattr(e,'code'):
+					if e.code in self.response_code:
+						self.response_code[e.code]+=1
 					else:
-						self.marked[e.code] = [crawling]
+						self.response_code[e.code]=1
 
-			logging.debug ("{1} ==> {0}".format(e, crawling))
-			return self.__continue_crawling()
+					# Gestion des urls marked pour le reporting
+					if self.report:
+						if e.code in self.marked:
+							self.marked[e.code].append(crawling)
+						else:
+							self.marked[e.code] = [crawling]
+
+				logging.debug ("{1} ==> {0}".format(e, crawling))
+				return self.__continue_crawling()
+		else:
+			logging.debug("Ignore {0} content might be not parseable.".format(crawling))
+			response = None
 
 		# Read the response
-		try:
-			msg = response.read()
-			if response.getcode() in self.response_code:
-				self.response_code[response.getcode()]+=1
-			else:
-				self.response_code[response.getcode()]=1
+		if response is not None:
+			try:
+				msg = response.read()
+				if response.getcode() in self.response_code:
+					self.response_code[response.getcode()]+=1
+				else:
+					self.response_code[response.getcode()]=1
 
-			response.close()
+				response.close()
 
-			# Get the last modify date
-			if 'last-modified' in response.headers:
-				date = response.headers['Last-Modified']
-			else:
-				date = response.headers['Date']
+				# Get the last modify date
+				if 'last-modified' in response.headers:
+					date = response.headers['Last-Modified']
+				else:
+					date = response.headers['Date']
 
-			date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %Z')
+				date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %Z')
 
-		except Exception as e:
-			logging.debug ("{1} ===> {0}".format(e, crawling))
-			return None
+			except Exception as e:
+				logging.debug ("{1} ===> {0}".format(e, crawling))
+				return None
+		else:
+			# Response is None, content not downloaded, just continu and add
+			# the link to the sitemap
+			msg = "".encode( )
+			date = None
 
 		# Image sitemap enabled ?
 		image_list = "";
@@ -166,7 +180,12 @@ class Crawler():
 					logging.debug("Found image : {0}".format(image_link))
 					image_list = "{0}<image:image><image:loc>{1}</image:loc></image:image>".format(image_list, image_link)
 
-		print ("<url><loc>"+url.geturl()+"</loc><lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>" + image_list + "</url>", file=self.output_file)
+		# Last mod fetched ?
+		lastmod = ""
+		if date:
+			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
+
+		print ("<url><loc>"+url.geturl()+"</loc>" + lastmod + image_list + "</url>", file=self.output_file)
 		if self.output_file:
 			self.output_file.flush()
 
