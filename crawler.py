@@ -225,6 +225,8 @@ class Crawler():
 				continue
 			if ("javascript" in link):
 				continue
+			if (link.startswith("data:image/")):
+				continue
 
 			# Count one more URL
 			self.nb_url+=1
