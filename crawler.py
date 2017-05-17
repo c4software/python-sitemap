@@ -258,7 +258,7 @@ class Crawler():
 
 	def is_image(self, path):
 		 mt,me = mimetypes.guess_type(path)
-		 return mt.startswith("image/")
+		 return mt is not None and mt.startswith("image/")
 
 	def __continue_crawling(self):
 		if self.tocrawl:
