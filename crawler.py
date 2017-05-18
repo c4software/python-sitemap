@@ -179,14 +179,14 @@ class Crawler():
 				# robot file
 				if self.can_fetch(image_link):
 					logging.debug("Found image : {0}".format(image_link))
-					image_list = "{0}<image:image><image:loc>{1}</image:loc></image:image>".format(image_list, image_link)
+					image_list = "{0}<image:image><image:loc>{1}</image:loc></image:image>".format(image_list, self.htmlspecialchars(image_link))
 
 		# Last mod fetched ?
 		lastmod = ""
 		if date:
 			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
 
-		print ("<url><loc>"+url.geturl()+"</loc>" + lastmod + image_list + "</url>", file=self.output_file)
+		print ("<url><loc>"+self.htmlspecialchars(url.geturl())+"</loc>" + lastmod + image_list + "</url>", file=self.output_file)
 		if self.output_file:
 			self.output_file.flush()
 
@@ -297,6 +297,9 @@ class Crawler():
 			if ex in link:
 				return False
 		return True
+
+	def htmlspecialchars(self, text):
+		return text.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 	def make_report(self):
 		print ("Number of found URL : {0}".format(self.nb_url))
