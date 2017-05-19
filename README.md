@@ -1,8 +1,8 @@
 # Python-Sitemap
 
-Simple script to crawl a website and create a sitemap.xml of all public link in a website
+Simple script to crawl websites and create a sitemap.xml of all public link in it.
 
-Warning : This script is designed to works with ***Python3***
+Warning : This script only works with ***Python3***
 
 ## Simple usage
 
@@ -28,6 +28,8 @@ Read a config file to set parameters:
   ```
 
 #### Enable Image Sitemap
+
+More informations here https://support.google.com/webmasters/answer/178636?hl=en
 
   ```
   $ python main.py --domain http://blog.lesite.us --output sitemap.xml --images
