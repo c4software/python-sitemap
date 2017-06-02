@@ -36,7 +36,7 @@ class Crawler():
 	not_parseable_ressources = (".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
 
 	# TODO also search for window.location={.*?}
-	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"].*?>')
+	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"][^>]*?>')
 	imageregex = re.compile (b'<img [^>]*src=[\'|"](.*?)[\'"].*?>')
 
 	rp = None
