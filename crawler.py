@@ -172,7 +172,9 @@ class Crawler():
 				image_link = image_link.decode("utf-8")
 
 				# Append domain if not present
-				if not image_link.startswith(("http", "https")):
+				if not image_link.startswith(("http", "https", "//")):
+					if not image_link.startswith("/"):
+						image_link = "/{0}".format(image_link)
 					image_link = "{0}{1}".format(self.domain.strip("/"), image_link.replace("./", "/"))
 
 				# Test if images as been already seen and not present in the
