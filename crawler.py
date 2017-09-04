@@ -48,6 +48,7 @@ class Crawler():
 	output_file = None
 
 	target_domain = ""
+	scheme		  = ""
 
 	def __init__(self, parserobots=False, output=None, report=False ,domain="",
 				 exclude=[], skipext=[], drop=[], debug=False, verbose=False, images=False):
@@ -74,7 +75,9 @@ class Crawler():
 		self.tocrawl = set([domain])
 
 		try:
-			self.target_domain = urlparse(domain)[1]
+			url_parsed = urlparse(domain)
+			self.target_domain = url_parsed.netloc
+			self.scheme = url_parsed.scheme
 		except:
 			logging.error("Invalide domain")
 			raise ("Invalid domain")
@@ -171,8 +174,11 @@ class Crawler():
 			for image_link in list(set(images)):
 				image_link = image_link.decode("utf-8")
 
+				# If path start with // get the current url scheme
+				if image_link.startswith("//"):
+					image_link = url.scheme + ":" + image_link
 				# Append domain if not present
-				if not image_link.startswith(("http", "https", "//")):
+				elif not image_link.startswith(("http", "https")):
 					if not image_link.startswith("/"):
 						image_link = "/{0}".format(image_link)
 					image_link = "{0}{1}".format(self.domain.strip("/"), image_link.replace("./", "/"))
