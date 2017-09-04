@@ -208,6 +208,8 @@ class Crawler():
 				link = url.scheme + '://' + url[1] + link
 			elif link.startswith('#'):
 				link = url.scheme + '://' + url[1] + url[2] + link
+			elif link.startswith(("mailto", "tel")):
+				continue
 			elif not link.startswith(('http', "https")):
 				link = url.scheme + '://' + url[1] + '/' + link
 
