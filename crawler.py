@@ -187,6 +187,10 @@ class Crawler():
 						image_link = "/{0}".format(image_link)
 					image_link = "{0}{1}".format(self.domain.strip("/"), image_link.replace("./", "/"))
 
+				# Ignore image if path is in the exclude_url list
+				if not self.exclude_url(image_link):
+					continue
+
 				# Test if images as been already seen and not present in the
 				# robot file
 				if self.can_fetch(image_link):
