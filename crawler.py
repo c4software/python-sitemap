@@ -242,6 +242,8 @@ class Crawler():
 				continue
 			if domain_link != self.target_domain:
 				continue
+			if parsed_link.path in ["", "/"]:
+				continue
 			if "javascript" in link:
 				continue
 			if self.is_image(parsed_link.path):
