@@ -174,6 +174,10 @@ class Crawler():
 			for image_link in list(set(images)):
 				image_link = image_link.decode("utf-8")
 
+				# Ignore link starting with data:
+				if image_link.startswith("data:"):
+					continue
+
 				# If path start with // get the current url scheme
 				if image_link.startswith("//"):
 					image_link = url.scheme + ":" + image_link
