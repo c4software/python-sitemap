@@ -33,7 +33,7 @@ class Crawler():
 
 	marked = {}
 
-	not_parseable_ressources = (".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
+	not_parseable_ressources = (".epub", ".mobi", ".docx", ".doc", ".opf", ".7z", ".ibooks", ".cbr", ".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
 
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"][^>]*?>')
@@ -209,7 +209,12 @@ class Crawler():
 		# Found links
 		links = self.linkregex.findall(msg)
 		for link in links:
-			link = link.decode("utf-8")
+			try:
+				link = link.decode("utf-8")
+			except Exception as e:
+				logging.error("Error decoding : {0}".format(link))
+				continue
+
 			logging.debug("Found : {0}".format(link))
 
 			if link.startswith('/'):
