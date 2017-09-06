@@ -212,7 +212,7 @@ class Crawler():
 			try:
 				link = link.decode("utf-8")
 			except Exception as e:
-				logging.error("Error decoding : {0}".format(link))
+				logging.debug("Error decoding : {0}".format(link))
 				continue
 
 			logging.debug("Found : {0}".format(link))
