@@ -1,6 +1,6 @@
 import config
 import logging
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlunparse
 
 import re
 from urllib.parse import urlparse
@@ -72,7 +72,7 @@ class Crawler():
 
 		logging.basicConfig(level=log_level)
 
-		self.tocrawl = set([domain])
+		self.tocrawl = set([self.clean_link(domain)])
 
 		try:
 			url_parsed = urlparse(domain)
@@ -215,6 +215,7 @@ class Crawler():
 				logging.debug("Error decoding : {0}".format(link))
 				continue
 
+			link = self.clean_link(link)
 			logging.debug("Found : {0}".format(link))
 
 			if link.startswith('/'):
@@ -280,6 +281,13 @@ class Crawler():
 			self.tocrawl.add(link)
 
 		return None
+
+	def clean_link(self, link):
+		l = urlparse(link)
+		l_res = list(l)
+		l_res[2] = l_res[2].replace("./", "/")
+		l_res[2] = l_res[2].replace("//", "/")
+		return urlunparse(l_res)
 
 	def is_image(self, path):
 		 mt,me = mimetypes.guess_type(path)
