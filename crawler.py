@@ -191,6 +191,12 @@ class Crawler():
 				if not self.exclude_url(image_link):
 					continue
 
+				# Ignore other domain images
+				image_link_parsed = urlparse(image_link)
+				if image_link_parsed.netloc != self.target_domain:
+					continue
+
+
 				# Test if images as been already seen and not present in the
 				# robot file
 				if self.can_fetch(image_link):
