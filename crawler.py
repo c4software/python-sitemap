@@ -172,7 +172,7 @@ class Crawler():
 			# Search for images in the current page.
 			images = self.imageregex.findall(msg)
 			for image_link in list(set(images)):
-				image_link = image_link.decode("utf-8")
+				image_link = image_link.decode("utf-8", errors="ignore")
 
 				# Ignore link starting with data:
 				if image_link.startswith("data:"):
@@ -215,12 +215,7 @@ class Crawler():
 		# Found links
 		links = self.linkregex.findall(msg)
 		for link in links:
-			try:
-				link = link.decode("utf-8")
-			except Exception as e:
-				logging.debug("Error decoding : {0}".format(link))
-				continue
-
+			link = link.decode("utf-8", errors="ignore")
 			link = self.clean_link(link)
 			logging.debug("Found : {0}".format(link))
 
