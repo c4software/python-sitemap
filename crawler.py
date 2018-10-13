@@ -11,7 +11,10 @@ from datetime import datetime
 import mimetypes
 import os
 
-class Crawler():
+class IllegalArgumentError(ValueError):
+	pass
+
+class Crawler:
 
 	# Variables
 	parserobots = False
@@ -27,13 +30,13 @@ class Crawler():
 
 	debug	= False
 
-	tocrawl = set([])
+	urls_to_crawl = set([])
 	crawled = set([])
 	excluded = set([])
 
 	marked = {}
 
-	not_parseable_ressources = (".epub", ".mobi", ".docx", ".doc", ".opf", ".7z", ".ibooks", ".cbr", ".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
+	not_parseable_resources = (".epub", ".mobi", ".docx", ".doc", ".opf", ".7z", ".ibooks", ".cbr", ".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
 
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"][^>]*?>')
@@ -72,7 +75,7 @@ class Crawler():
 
 		logging.basicConfig(level=log_level)
 
-		self.tocrawl = set([self.clean_link(domain)])
+		self.urls_to_crawl = {self.clean_link(domain)}
 
 		try:
 			url_parsed = urlparse(domain)
@@ -80,7 +83,7 @@ class Crawler():
 			self.scheme = url_parsed.scheme
 		except:
 			logging.error("Invalide domain")
-			raise ("Invalid domain")
+			raise IllegalArgumentError("Invalid domain")
 
 		if self.output:
 			try:
@@ -97,7 +100,7 @@ class Crawler():
 
 		logging.info("Start the crawling process")
 
-		while len(self.tocrawl) != 0:
+		while len(self.urls_to_crawl) != 0:
 			self.__crawling()
 
 		logging.info("Crawling has reached end of all found links")
@@ -106,16 +109,16 @@ class Crawler():
 
 
 	def __crawling(self):
-		crawling = self.tocrawl.pop()
+		current_url = self.urls_to_crawl.pop()
 
-		url = urlparse(crawling)
-		self.crawled.add(crawling)
+		url = urlparse(current_url)
+		self.crawled.add(current_url)
 		logging.info("Crawling #{}: {}".format(len(self.crawled), url.geturl()))
-		request = Request(crawling, headers={"User-Agent":config.crawler_user_agent})
+		request = Request(current_url, headers={"User-Agent":config.crawler_user_agent})
 
-		# Ignore ressources listed in the not_parseable_ressources
+		# Ignore ressources listed in the not_parseable_resources
 		# Its avoid dowloading file like pdf… etc
-		if not url.path.endswith(self.not_parseable_ressources):
+		if not url.path.endswith(self.not_parseable_resources):
 			try:
 				response = urlopen(request)
 			except Exception as e:
@@ -128,14 +131,14 @@ class Crawler():
 					# Gestion des urls marked pour le reporting
 					if self.report:
 						if e.code in self.marked:
-							self.marked[e.code].append(crawling)
+							self.marked[e.code].append(current_url)
 						else:
-							self.marked[e.code] = [crawling]
+							self.marked[e.code] = [current_url]
 
-				logging.debug ("{1} ==> {0}".format(e, crawling))
+				logging.debug ("{1} ==> {0}".format(e, current_url))
 				return self.__continue_crawling()
 		else:
-			logging.debug("Ignore {0} content might be not parseable.".format(crawling))
+			logging.debug("Ignore {0} content might be not parseable.".format(current_url))
 			response = None
 
 		# Read the response
@@ -158,7 +161,7 @@ class Crawler():
 				date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %Z')
 
 			except Exception as e:
-				logging.debug ("{1} ===> {0}".format(e, crawling))
+				logging.debug ("{1} ===> {0}".format(e, current_url))
 				return None
 		else:
 			# Response is None, content not downloaded, just continu and add
@@ -167,7 +170,7 @@ class Crawler():
 			date = None
 
 		# Image sitemap enabled ?
-		image_list = "";
+		image_list = ""
 		if self.images:
 			# Search for images in the current page.
 			images = self.imageregex.findall(msg)
@@ -243,7 +246,7 @@ class Crawler():
 
 			if link in self.crawled:
 				continue
-			if link in self.tocrawl:
+			if link in self.urls_to_crawl:
 				continue
 			if link in self.excluded:
 				continue
@@ -268,18 +271,18 @@ class Crawler():
 				continue
 
 			# Check if the current file extension is allowed or not.
-			if (target_extension in self.skipext):
+			if target_extension in self.skipext:
 				self.exclude_link(link)
 				self.nb_exclude+=1
 				continue
 
 			# Check if the current url doesn't contain an excluded word
-			if (not self.exclude_url(link)):
+			if not self.exclude_url(link):
 				self.exclude_link(link)
 				self.nb_exclude+=1
 				continue
 
-			self.tocrawl.add(link)
+			self.urls_to_crawl.add(link)
 
 		return None
 
@@ -290,12 +293,13 @@ class Crawler():
 		l_res[2] = l_res[2].replace("//", "/")
 		return urlunparse(l_res)
 
-	def is_image(self, path):
+	@staticmethod
+	def is_image(path):
 		 mt,me = mimetypes.guess_type(path)
 		 return mt is not None and mt.startswith("image/")
 
 	def __continue_crawling(self):
-		if self.tocrawl:
+		if self.urls_to_crawl:
 			self.__crawling()
 
 	def exclude_link(self,link):
@@ -332,7 +336,8 @@ class Crawler():
 				return False
 		return True
 
-	def htmlspecialchars(self, text):
+	@staticmethod
+	def htmlspecialchars(text):
 		return text.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 	def make_report(self):
