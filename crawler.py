@@ -1,3 +1,6 @@
+import asyncio
+import concurrent.futures
+
 import config
 import logging
 from urllib.parse import urljoin, urlunparse
@@ -31,7 +34,7 @@ class Crawler:
 	debug	= False
 
 	urls_to_crawl = set([])
-	crawled = set([])
+	crawled_or_crawling = set([])
 	excluded = set([])
 
 	marked = {}
@@ -53,8 +56,10 @@ class Crawler:
 	target_domain = ""
 	scheme		  = ""
 
-	def __init__(self, parserobots=False, output=None, report=False ,domain="",
-				 exclude=[], skipext=[], drop=[], debug=False, verbose=False, images=False):
+	def __init__(self, num_workers=1, parserobots=False, output=None,
+				 report=False ,domain="", exclude=[], skipext=[], drop=[],
+				 debug=False, verbose=False, images=False):
+		self.num_workers = num_workers
 		self.parserobots = parserobots
 		self.output 	= output
 		self.report 	= report
@@ -76,6 +81,10 @@ class Crawler:
 		logging.basicConfig(level=log_level)
 
 		self.urls_to_crawl = {self.clean_link(domain)}
+		self.num_crawled = 0
+
+		if num_workers <= 0:
+			raise IllegalArgumentError("Number or workers must be positive")
 
 		try:
 			url_parsed = urlparse(domain)
@@ -100,20 +109,48 @@ class Crawler:
 
 		logging.info("Start the crawling process")
 
-		while len(self.urls_to_crawl) != 0:
-			self.__crawling()
+		if self.num_workers == 1:
+			while len(self.urls_to_crawl) != 0:
+				current_url = self.urls_to_crawl.pop()
+				self.crawled_or_crawling.add(current_url)
+				self.__crawl(current_url)
+		else:
+			event_loop = asyncio.get_event_loop()
+			try:
+				while len(self.urls_to_crawl) != 0:
+					executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.num_workers)
+					event_loop.run_until_complete(self.crawl_all_pending_urls(executor))
+			finally:
+				event_loop.close()
 
 		logging.info("Crawling has reached end of all found links")
 
 		print (config.xml_footer, file=self.output_file)
 
 
-	def __crawling(self):
-		current_url = self.urls_to_crawl.pop()
+	async def crawl_all_pending_urls(self, executor):
+		event_loop = asyncio.get_event_loop()
 
+		crawl_tasks = []
+		for url in self.urls_to_crawl:
+			self.crawled_or_crawling.add(url)
+			task = event_loop.run_in_executor(executor, self.__crawl, url)
+			crawl_tasks.append(task)
+
+		self.urls_to_crawl = set()
+
+		logging.debug('waiting on all crawl tasks to complete')
+		await asyncio.wait(crawl_tasks)
+		logging.debug('all crawl tasks have completed nicely')
+		return
+
+
+
+	def __crawl(self, current_url):
 		url = urlparse(current_url)
-		self.crawled.add(current_url)
-		logging.info("Crawling #{}: {}".format(len(self.crawled), url.geturl()))
+		logging.info("Crawling #{}: {}".format(self.num_crawled, url.geturl()))
+		self.num_crawled += 1
+
 		request = Request(current_url, headers={"User-Agent":config.crawler_user_agent})
 
 		# Ignore ressources listed in the not_parseable_resources
@@ -136,7 +173,7 @@ class Crawler:
 							self.marked[e.code] = [current_url]
 
 				logging.debug ("{1} ==> {0}".format(e, current_url))
-				return self.__continue_crawling()
+				return
 		else:
 			logging.debug("Ignore {0} content might be not parseable.".format(current_url))
 			response = None
@@ -162,7 +199,7 @@ class Crawler:
 
 			except Exception as e:
 				logging.debug ("{1} ===> {0}".format(e, current_url))
-				return None
+				return
 		else:
 			# Response is None, content not downloaded, just continu and add
 			# the link to the sitemap
@@ -244,7 +281,7 @@ class Crawler:
 			domain_link = parsed_link.netloc
 			target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
-			if link in self.crawled:
+			if link in self.crawled_or_crawling:
 				continue
 			if link in self.urls_to_crawl:
 				continue
@@ -284,7 +321,6 @@ class Crawler:
 
 			self.urls_to_crawl.add(link)
 
-		return None
 
 	def clean_link(self, link):
 		l = urlparse(link)
@@ -297,10 +333,6 @@ class Crawler:
 	def is_image(path):
 		 mt,me = mimetypes.guess_type(path)
 		 return mt is not None and mt.startswith("image/")
-
-	def __continue_crawling(self):
-		if self.urls_to_crawl:
-			self.__crawling()
 
 	def exclude_link(self,link):
 		if link not in self.excluded:
@@ -342,7 +374,7 @@ class Crawler:
 
 	def make_report(self):
 		print ("Number of found URL : {0}".format(self.nb_url))
-		print ("Number of link crawled : {0}".format(len(self.crawled)))
+		print ("Number of links crawled : {0}".format(len(self.num_crawled)))
 		if self.parserobots:
 			print ("Number of link block by robots.txt : {0}".format(self.nb_rp))
 		if self.skipext or self.exclude:

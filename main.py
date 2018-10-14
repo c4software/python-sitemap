@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import argparse
 import os
 
@@ -9,6 +11,7 @@ import crawler
 parser = argparse.ArgumentParser(description='Crawler pour la creation de site map')
 
 parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
+parser.add_argument('-n', '--num-workers', type=int, default=1, help="Number of workers if multithreading")
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('-v', '--verbose', action="store_true", help="Enable verbose output")
