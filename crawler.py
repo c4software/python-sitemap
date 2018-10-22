@@ -1,3 +1,6 @@
+import asyncio
+import concurrent.futures
+
 import config
 import logging
 from urllib.parse import urljoin, urlunparse
@@ -11,7 +14,10 @@ from datetime import datetime
 import mimetypes
 import os
 
-class Crawler():
+class IllegalArgumentError(ValueError):
+	pass
+
+class Crawler:
 
 	# Variables
 	parserobots = False
@@ -27,13 +33,13 @@ class Crawler():
 
 	debug	= False
 
-	tocrawl = set([])
-	crawled = set([])
+	urls_to_crawl = set([])
+	crawled_or_crawling = set([])
 	excluded = set([])
 
 	marked = {}
 
-	not_parseable_ressources = (".epub", ".mobi", ".docx", ".doc", ".opf", ".7z", ".ibooks", ".cbr", ".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
+	not_parseable_resources = (".epub", ".mobi", ".docx", ".doc", ".opf", ".7z", ".ibooks", ".cbr", ".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
 
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"][^>]*?>')
@@ -50,8 +56,10 @@ class Crawler():
 	target_domain = ""
 	scheme		  = ""
 
-	def __init__(self, parserobots=False, output=None, report=False ,domain="",
-				 exclude=[], skipext=[], drop=[], debug=False, verbose=False, images=False):
+	def __init__(self, num_workers=1, parserobots=False, output=None,
+				 report=False ,domain="", exclude=[], skipext=[], drop=[],
+				 debug=False, verbose=False, images=False):
+		self.num_workers = num_workers
 		self.parserobots = parserobots
 		self.output 	= output
 		self.report 	= report
@@ -72,7 +80,11 @@ class Crawler():
 
 		logging.basicConfig(level=log_level)
 
-		self.tocrawl = set([self.clean_link(domain)])
+		self.urls_to_crawl = {self.clean_link(domain)}
+		self.num_crawled = 0
+
+		if num_workers <= 0:
+			raise IllegalArgumentError("Number or workers must be positive")
 
 		try:
 			url_parsed = urlparse(domain)
@@ -80,7 +92,7 @@ class Crawler():
 			self.scheme = url_parsed.scheme
 		except:
 			logging.error("Invalide domain")
-			raise ("Invalid domain")
+			raise IllegalArgumentError("Invalid domain")
 
 		if self.output:
 			try:
@@ -97,25 +109,53 @@ class Crawler():
 
 		logging.info("Start the crawling process")
 
-		while len(self.tocrawl) != 0:
-			self.__crawling()
+		if self.num_workers == 1:
+			while len(self.urls_to_crawl) != 0:
+				current_url = self.urls_to_crawl.pop()
+				self.crawled_or_crawling.add(current_url)
+				self.__crawl(current_url)
+		else:
+			event_loop = asyncio.get_event_loop()
+			try:
+				while len(self.urls_to_crawl) != 0:
+					executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.num_workers)
+					event_loop.run_until_complete(self.crawl_all_pending_urls(executor))
+			finally:
+				event_loop.close()
 
 		logging.info("Crawling has reached end of all found links")
 
 		print (config.xml_footer, file=self.output_file)
 
 
-	def __crawling(self):
-		crawling = self.tocrawl.pop()
+	async def crawl_all_pending_urls(self, executor):
+		event_loop = asyncio.get_event_loop()
 
-		url = urlparse(crawling)
-		self.crawled.add(crawling)
-		logging.info("Crawling #{}: {}".format(len(self.crawled), url.geturl()))
-		request = Request(crawling, headers={"User-Agent":config.crawler_user_agent})
+		crawl_tasks = []
+		for url in self.urls_to_crawl:
+			self.crawled_or_crawling.add(url)
+			task = event_loop.run_in_executor(executor, self.__crawl, url)
+			crawl_tasks.append(task)
 
-		# Ignore ressources listed in the not_parseable_ressources
+		self.urls_to_crawl = set()
+
+		logging.debug('waiting on all crawl tasks to complete')
+		await asyncio.wait(crawl_tasks)
+		logging.debug('all crawl tasks have completed nicely')
+		return
+
+
+
+	def __crawl(self, current_url):
+		url = urlparse(current_url)
+		logging.info("Crawling #{}: {}".format(self.num_crawled, url.geturl()))
+		self.num_crawled += 1
+
+		request = Request(current_url, headers={"User-Agent":config.crawler_user_agent})
+
+		# Ignore ressources listed in the not_parseable_resources
 		# Its avoid dowloading file like pdf… etc
-		if not url.path.endswith(self.not_parseable_ressources):
+		if not url.path.endswith(self.not_parseable_resources):
 			try:
 				response = urlopen(request)
 			except Exception as e:
@@ -128,14 +168,14 @@ class Crawler():
 					# Gestion des urls marked pour le reporting
 					if self.report:
 						if e.code in self.marked:
-							self.marked[e.code].append(crawling)
+							self.marked[e.code].append(current_url)
 						else:
-							self.marked[e.code] = [crawling]
+							self.marked[e.code] = [current_url]
 
-				logging.debug ("{1} ==> {0}".format(e, crawling))
-				return self.__continue_crawling()
+				logging.debug ("{1} ==> {0}".format(e, current_url))
+				return
 		else:
-			logging.debug("Ignore {0} content might be not parseable.".format(crawling))
+			logging.debug("Ignore {0} content might be not parseable.".format(current_url))
 			response = None
 
 		# Read the response
@@ -158,8 +198,8 @@ class Crawler():
 				date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %Z')
 
 			except Exception as e:
-				logging.debug ("{1} ===> {0}".format(e, crawling))
-				return None
+				logging.debug ("{1} ===> {0}".format(e, current_url))
+				return
 		else:
 			# Response is None, content not downloaded, just continu and add
 			# the link to the sitemap
@@ -167,7 +207,7 @@ class Crawler():
 			date = None
 
 		# Image sitemap enabled ?
-		image_list = "";
+		image_list = ""
 		if self.images:
 			# Search for images in the current page.
 			images = self.imageregex.findall(msg)
@@ -241,9 +281,9 @@ class Crawler():
 			domain_link = parsed_link.netloc
 			target_extension = os.path.splitext(parsed_link.path)[1][1:]
 
-			if link in self.crawled:
+			if link in self.crawled_or_crawling:
 				continue
-			if link in self.tocrawl:
+			if link in self.urls_to_crawl:
 				continue
 			if link in self.excluded:
 				continue
@@ -268,20 +308,19 @@ class Crawler():
 				continue
 
 			# Check if the current file extension is allowed or not.
-			if (target_extension in self.skipext):
+			if target_extension in self.skipext:
 				self.exclude_link(link)
 				self.nb_exclude+=1
 				continue
 
 			# Check if the current url doesn't contain an excluded word
-			if (not self.exclude_url(link)):
+			if not self.exclude_url(link):
 				self.exclude_link(link)
 				self.nb_exclude+=1
 				continue
 
-			self.tocrawl.add(link)
+			self.urls_to_crawl.add(link)
 
-		return None
 
 	def clean_link(self, link):
 		l = urlparse(link)
@@ -290,13 +329,10 @@ class Crawler():
 		l_res[2] = l_res[2].replace("//", "/")
 		return urlunparse(l_res)
 
-	def is_image(self, path):
+	@staticmethod
+	def is_image(path):
 		 mt,me = mimetypes.guess_type(path)
 		 return mt is not None and mt.startswith("image/")
-
-	def __continue_crawling(self):
-		if self.tocrawl:
-			self.__crawling()
 
 	def exclude_link(self,link):
 		if link not in self.excluded:
@@ -332,12 +368,13 @@ class Crawler():
 				return False
 		return True
 
-	def htmlspecialchars(self, text):
+	@staticmethod
+	def htmlspecialchars(text):
 		return text.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 	def make_report(self):
 		print ("Number of found URL : {0}".format(self.nb_url))
-		print ("Number of link crawled : {0}".format(len(self.crawled)))
+		print ("Number of links crawled : {0}".format(len(self.num_crawled)))
 		if self.parserobots:
 			print ("Number of link block by robots.txt : {0}".format(self.nb_rp))
 		if self.skipext or self.exclude:

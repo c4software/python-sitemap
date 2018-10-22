@@ -69,7 +69,13 @@ More informations here https://support.google.com/webmasters/answer/178636?hl=en
 
 ```
 $ python3 main.py --domain https://blog.lesite.us --images --parserobots | xmllint --format -
-```  
+```
+
+#### Multithreaded
+
+```
+$ python3 main.py --domain https://blog.lesite.us --num-workers 4
+```
 
 ## Docker usage
 
