@@ -52,6 +52,10 @@ for argument in config:
 			dict_arg[argument] = config[argument]
 del(dict_arg['config'])
 
+if dict_arg["domain"] == "":
+	print ("You must provide a domain to use the crawler.")
+	exit()
+
 crawl = crawler.Crawler(**dict_arg)
 crawl.run()
 
