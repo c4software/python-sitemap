@@ -374,7 +374,7 @@ class Crawler:
 
 	def make_report(self):
 		print ("Number of found URL : {0}".format(self.nb_url))
-		print ("Number of links crawled : {0}".format(len(self.num_crawled)))
+		print ("Number of links crawled : {0}".format(self.num_crawled))
 		if self.parserobots:
 			print ("Number of link block by robots.txt : {0}".format(self.nb_rp))
 		if self.skipext or self.exclude:
