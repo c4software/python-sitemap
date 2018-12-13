@@ -9,3 +9,6 @@ xml_header = """<?xml version="1.0" encoding="UTF-8"?>
 xml_footer = "</urlset>"
 
 crawler_user_agent = 'Sitemap crawler'
+
+number_calls = 1  # number of requests per call period
+call_period = 15  # time in seconds per number of requests
