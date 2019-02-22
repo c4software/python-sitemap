@@ -3,7 +3,7 @@ import concurrent.futures
 
 import config
 import logging
-from urllib.parse import urljoin, urlunparse
+from urllib.parse import urljoin, urlunparse, urlsplit, urlunsplit
 
 import re
 from urllib.parse import urlparse
@@ -256,7 +256,6 @@ class Crawler:
 		links = self.linkregex.findall(msg)
 		for link in links:
 			link = link.decode("utf-8", errors="ignore")
-			link = self.clean_link(link)
 			logging.debug("Found : {0}".format(link))
 
 			if link.startswith('/'):
@@ -266,7 +265,7 @@ class Crawler:
 			elif link.startswith(("mailto", "tel")):
 				continue
 			elif not link.startswith(('http', "https")):
-				link = url.scheme + '://' + url[1] + '/' + link
+				link = self.clean_link(urljoin(current_url, link))
 
 			# Remove the anchor part if needed
 			if "#" in link:
@@ -323,11 +322,22 @@ class Crawler:
 
 
 	def clean_link(self, link):
-		l = urlparse(link)
-		l_res = list(l)
-		l_res[2] = l_res[2].replace("./", "/")
-		l_res[2] = l_res[2].replace("//", "/")
-		return urlunparse(l_res)
+		parts = list(urlsplit(link))
+		parts[2] = self.resolve_url_path(parts[2])
+		return urlunsplit(parts)
+		
+	def resolve_url_path(self, path):
+		# From https://stackoverflow.com/questions/4317242/python-how-to-resolve-urls-containing/40536115#40536115
+		segments = path.split('/')
+		segments = [segment + '/' for segment in segments[:-1]] + [segments[-1]]
+		resolved = []
+		for segment in segments:
+			if segment in ('../', '..'):
+				if resolved[1:]:
+					resolved.pop()
+			elif segment not in ('./', '.'):
+				resolved.append(segment)
+		return ''.join(resolved)
 
 	@staticmethod
 	def is_image(path):
