@@ -7,9 +7,7 @@ import json
 
 import crawler
 
-# Gestion des parametres
-parser = argparse.ArgumentParser(description='Crawler pour la creation de site map')
-
+parser = argparse.ArgumentParser(description='Python SiteMap Crawler')
 parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
 parser.add_argument('-n', '--num-workers', type=int, default=1, help="Number of workers if multithreading")
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
