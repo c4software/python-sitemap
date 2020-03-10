@@ -13,6 +13,7 @@ from datetime import datetime
 
 import mimetypes
 import os
+from ratelimit import limits, sleep_and_retry
 
 class IllegalArgumentError(ValueError):
 	pass
@@ -24,7 +25,6 @@ class Crawler:
 	output 	= None
 	report 	= False
 
-	config 	= None
 	domain	= ""
 
 	exclude = []
@@ -144,8 +144,8 @@ class Crawler:
 		logging.debug('all crawl tasks have completed nicely')
 		return
 
-
-
+	@sleep_and_retry
+	@limits(calls=config.number_calls, period=config.call_period)
 	def __crawl(self, current_url):
 		url = urlparse(current_url)
 		logging.info("Crawling #{}: {}".format(self.num_crawled, url.geturl()))
