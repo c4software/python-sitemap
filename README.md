@@ -77,6 +77,12 @@ $ python3 main.py --domain https://blog.lesite.us --images --parserobots | xmlli
 $ python3 main.py --domain https://blog.lesite.us --num-workers 4
 ```
 
+#### with basic auth
+***You need to configure `username` and `password` in your `config.py` before***
+```
+$ python3 main.py --domain https://blog.lesite.us --auth
+```
+
 ## Docker usage
 
 #### Build the Docker image:
