@@ -12,6 +12,7 @@ parser.add_argument('--skipext', action="append", default=[], required=False, he
 parser.add_argument('-n', '--num-workers', type=int, default=1, help="Number of workers if multithreading")
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
+parser.add_argument('--auth', action="store_true", default=False, help="Enable basic authorisation while crawling")
 parser.add_argument('-v', '--verbose', action="store_true", help="Enable verbose output")
 parser.add_argument('--output', action="store", default=None, help="Output file")
 parser.add_argument('--exclude', action="append", default=[], required=False, help="Exclude Url if contain")

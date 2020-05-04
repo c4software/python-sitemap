@@ -1,6 +1,6 @@
 import asyncio
 import concurrent.futures
-
+import base64
 import config
 import logging
 from urllib.parse import urljoin, urlunparse, urlsplit, urlunsplit
@@ -32,6 +32,7 @@ class Crawler:
 	drop    = []
 
 	debug	= False
+	auth = False
 
 	urls_to_crawl = set([])
 	crawled_or_crawling = set([])
@@ -58,7 +59,7 @@ class Crawler:
 
 	def __init__(self, num_workers=1, parserobots=False, output=None,
 				 report=False ,domain="", exclude=[], skipext=[], drop=[],
-				 debug=False, verbose=False, images=False):
+				 debug=False, verbose=False, images=False, auth=False):
 		self.num_workers = num_workers
 		self.parserobots = parserobots
 		self.output 	= output
@@ -70,6 +71,7 @@ class Crawler:
 		self.debug		= debug
 		self.verbose    = verbose
 		self.images     = images
+		self.auth = auth
 
 		if self.debug:
 			log_level = logging.DEBUG
@@ -151,7 +153,11 @@ class Crawler:
 		logging.info("Crawling #{}: {}".format(self.num_crawled, url.geturl()))
 		self.num_crawled += 1
 
-		request = Request(current_url, headers={"User-Agent":config.crawler_user_agent})
+		request = Request(current_url, headers={"User-Agent": config.crawler_user_agent})
+
+		if self.auth:
+			base64string = base64.b64encode(bytes(f'{config.username}:{config.password}', 'ascii'))
+			request.add_header("Authorization", "Basic %s" % base64string.decode('utf-8'))
 
 		# Ignore ressources listed in the not_parseable_resources
 		# Its avoid dowloading file like pdf… etc
@@ -325,7 +331,7 @@ class Crawler:
 		parts = list(urlsplit(link))
 		parts[2] = self.resolve_url_path(parts[2])
 		return urlunsplit(parts)
-		
+
 	def resolve_url_path(self, path):
 		# From https://stackoverflow.com/questions/4317242/python-how-to-resolve-urls-containing/40536115#40536115
 		segments = path.split('/')
