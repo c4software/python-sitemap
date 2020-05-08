@@ -9,3 +9,7 @@ xml_header = """<?xml version="1.0" encoding="UTF-8"?>
 xml_footer = "</urlset>"
 
 crawler_user_agent = 'Sitemap crawler'
+
+# if used with --auth you have to provide username and password here for basic auth
+username = "username"
+password = "password"
