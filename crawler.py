@@ -1,6 +1,8 @@
 import asyncio
 import concurrent.futures
 import base64
+from copy import copy
+
 import config
 import logging
 from urllib.parse import urljoin, urlunparse, urlsplit, urlunsplit
@@ -134,12 +136,17 @@ class Crawler:
 		event_loop = asyncio.get_event_loop()
 
 		crawl_tasks = []
-		for url in self.urls_to_crawl:
+		# Since the tasks created by `run_in_executor` begin executing immediately,
+		# `self.urls_to_crawl` will start to get updated, potentially before the below
+		# for loop finishes.  This creates a race condition and if `self.urls_to_crawl`
+		# is updated (by `self.__crawl`) before the for loop finishes, it'll raise an
+		# error
+		urls_to_crawl = copy(self.urls_to_crawl)
+		self.urls_to_crawl.clear()
+		for url in urls_to_crawl:
 			self.crawled_or_crawling.add(url)
 			task = event_loop.run_in_executor(executor, self.__crawl, url)
 			crawl_tasks.append(task)
-
-		self.urls_to_crawl = set()
 
 		logging.debug('waiting on all crawl tasks to complete')
 		await asyncio.wait(crawl_tasks)
