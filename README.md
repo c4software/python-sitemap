@@ -83,6 +83,12 @@ $ python3 main.py --domain https://blog.lesite.us --num-workers 4
 $ python3 main.py --domain https://blog.lesite.us --auth
 ```
 
+#### Output sitemap index file
+***Sitemaps with over 50,000 URLs should be split into an index file that points to sitemap files that each contain 50,000 URLs or fewer.  Outputting as an index requires specifying an output file.  An index will only be output if a crawl has more than 50,000 URLs:***
+```
+$ python3 main.py --domain https://blog.lesite.us --as-index --output sitemap.xml
+```
+
 ## Docker usage
 
 #### Build the Docker image:

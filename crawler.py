@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import base64
 from copy import copy
+import math
 
 import config
 import logging
@@ -21,6 +22,8 @@ class IllegalArgumentError(ValueError):
 
 class Crawler:
 
+	MAX_URLS_PER_SITEMAP = 50000
+
 	# Variables
 	parserobots = False
 	output 	= None
@@ -37,6 +40,7 @@ class Crawler:
 	auth = False
 
 	urls_to_crawl = set([])
+	url_strings_to_output = []
 	crawled_or_crawling = set([])
 	excluded = set([])
 
@@ -61,7 +65,7 @@ class Crawler:
 
 	def __init__(self, num_workers=1, parserobots=False, output=None,
 				 report=False ,domain="", exclude=[], skipext=[], drop=[],
-				 debug=False, verbose=False, images=False, auth=False):
+				 debug=False, verbose=False, images=False, auth=False, as_index=False):
 		self.num_workers = num_workers
 		self.parserobots = parserobots
 		self.output 	= output
@@ -73,7 +77,8 @@ class Crawler:
 		self.debug		= debug
 		self.verbose    = verbose
 		self.images     = images
-		self.auth = auth
+		self.auth       = auth
+		self.as_index   = as_index
 
 		if self.debug:
 			log_level = logging.DEBUG
@@ -85,6 +90,7 @@ class Crawler:
 		logging.basicConfig(level=log_level)
 
 		self.urls_to_crawl = {self.clean_link(domain)}
+		self.url_strings_to_output = []
 		self.num_crawled = 0
 
 		if num_workers <= 0:
@@ -104,10 +110,11 @@ class Crawler:
 			except:
 				logging.error ("Output file not available.")
 				exit(255)
+		elif self.as_index:
+			logging.error("When specifying an index file as an output option, you must include an output file name")
+			exit(255)
 
 	def run(self):
-		print(config.xml_header, file=self.output_file)
-
 		if self.parserobots:
 			self.check_robots()
 
@@ -129,7 +136,8 @@ class Crawler:
 
 		logging.info("Crawling has reached end of all found links")
 
-		print (config.xml_footer, file=self.output_file)
+		self.write_sitemap_output()
+
 
 
 	async def crawl_all_pending_urls(self, executor):
@@ -260,10 +268,8 @@ class Crawler:
 		lastmod = ""
 		if date:
 			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
-
-		print ("<url><loc>"+self.htmlspecialchars(url.geturl())+"</loc>" + lastmod + image_list + "</url>", file=self.output_file)
-		if self.output_file:
-			self.output_file.flush()
+		url_string = "<url><loc>"+self.htmlspecialchars(url.geturl())+"</loc>" + lastmod + image_list + "</url>"
+		self.url_strings_to_output.append(url_string)
 
 		# Found links
 		links = self.linkregex.findall(msg)
@@ -333,6 +339,74 @@ class Crawler:
 
 			self.urls_to_crawl.add(link)
 
+	def write_sitemap_output(self):
+		are_multiple_sitemap_files_required = \
+			len(self.url_strings_to_output) > self.MAX_URLS_PER_SITEMAP
+
+		# When there are more than 50,000 URLs, the sitemap specification says we have
+		# to split the sitemap into multiple files using an index file that points to the
+		# location of each sitemap file.  For now, we require the caller to explicitly
+		# specify they want to create an index, even if there are more than 50,000 URLs,
+		# to maintain backward compatibility.
+		#
+		# See specification here:
+		# https://support.google.com/webmasters/answer/183668?hl=en
+		if are_multiple_sitemap_files_required and self.as_index:
+			self.write_index_and_sitemap_files()
+		else:
+			self.write_single_sitemap()
+
+	def write_single_sitemap(self):
+		self.write_sitemap_file(self.output_file, self.url_strings_to_output)
+
+	def write_index_and_sitemap_files(self):
+		sitemap_index_filename, sitemap_index_extension = os.path.splitext(self.output)
+
+		num_sitemap_files = math.ceil(len(self.url_strings_to_output) / self.MAX_URLS_PER_SITEMAP)
+		sitemap_filenames = []
+		for i in range(0, num_sitemap_files):
+			# name the individual sitemap files based on the name of the index file
+			sitemap_filename = sitemap_index_filename + '-' + str(i) + sitemap_index_extension
+			sitemap_filenames.append(sitemap_filename)
+
+		self.write_sitemap_index(sitemap_filenames)
+
+		for i, sitemap_filename in enumerate(sitemap_filenames):
+			self.write_subset_of_urls_to_sitemap(sitemap_filename, i * self.MAX_URLS_PER_SITEMAP)
+
+	def write_sitemap_index(self, sitemap_filenames):
+		sitemap_index_file = self.output_file
+		print(config.sitemapindex_header, file=sitemap_index_file)
+		for sitemap_filename in sitemap_filenames:
+			sitemap_url = urlunsplit([self.scheme, self.target_domain, sitemap_filename, '', ''])
+			print("<sitemap><loc>" + sitemap_url + "</loc>""</sitemap>", file=sitemap_index_file)
+		print(config.sitemapindex_footer, file=sitemap_index_file)
+
+	def write_subset_of_urls_to_sitemap(self, filename, index):
+		# Writes a maximum of self.MAX_URLS_PER_SITEMAP urls to a sitemap file
+		#
+		# filename: name of the file to write the sitemap to
+		# index:    zero-based index from which to start writing url strings contained in
+		#           self.url_strings_to_output
+		try:
+			sitemap_file = open(filename, 'w')
+		except:
+			logging.error("Could not open sitemap file that is part of index.")
+			exit(255)
+
+		start_index = index
+		end_index = (index + self.MAX_URLS_PER_SITEMAP)
+		sitemap_url_strings = self.url_strings_to_output[start_index:end_index]
+		self.write_sitemap_file(sitemap_file, sitemap_url_strings)
+
+	@staticmethod
+	def write_sitemap_file(file, url_strings):
+		print(config.xml_header, file=file)
+
+		for url_string in url_strings:
+			print (url_string, file=file)
+
+		print (config.xml_footer, file=file)
 
 	def clean_link(self, link):
 		parts = list(urlsplit(link))
