@@ -389,15 +389,14 @@ class Crawler:
 		# index:    zero-based index from which to start writing url strings contained in
 		#           self.url_strings_to_output
 		try:
-			sitemap_file = open(filename, 'w')
+			with open(filename, 'w') as sitemap_file:
+				start_index = index
+				end_index = (index + self.MAX_URLS_PER_SITEMAP)
+				sitemap_url_strings = self.url_strings_to_output[start_index:end_index]
+				self.write_sitemap_file(sitemap_file, sitemap_url_strings)
 		except:
 			logging.error("Could not open sitemap file that is part of index.")
 			exit(255)
-
-		start_index = index
-		end_index = (index + self.MAX_URLS_PER_SITEMAP)
-		sitemap_url_strings = self.url_strings_to_output[start_index:end_index]
-		self.write_sitemap_file(sitemap_file, sitemap_url_strings)
 
 	@staticmethod
 	def write_sitemap_file(file, url_strings):
