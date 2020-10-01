@@ -1,4 +1,4 @@
-# Python-Sitemap
+# Python-Sitemap - Have a fun using python
 
 Simple script to crawl websites and create a sitemap.xml of all public link in it.
 
@@ -103,7 +103,7 @@ $ python3 main.py --domain https://blog.lesite.us --auth
   $ docker run -it python-sitemap --domain https://www.graylog.fr
   ```
 
-#### Run with config file and output :
+#### Run with configure file and output :
 ***You need to configure config.json file before***
 
   ```
