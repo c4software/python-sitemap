@@ -1,5 +1,5 @@
                     GNU GENERAL PUBLIC LICENSE
-                       Version 3, 29 June 2007
+                       Version 3.0, 29 June 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
  Everyone is permitted to copy and distribute verbatim copies
@@ -617,6 +617,22 @@ reviewing courts shall apply local law that most closely approximates
 an absolute waiver of all civil liability in connection with the
 Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
+
+The copyright disclaimer
+
+If you are an individual, and you have an employer or study in a school, it's wise to ask your employer or school to sign a copyright disclaimer for your program, so it cannot later claim that the copyright belongs to it and that you had no right to release the program at all. This really has nothing to do with the GNU GPL—it applies no matter which free software license you use to release the program.
+
+Here is a sample copyright disclaimer; just alter the names, title, and program description as appropriate:
+
+Yoyodyne, Inc., hereby disclaims all copyright interest in the program “Woodpecker” (which deconstructs trees) written by James Hacker.
+
+signature of Moe Ghoul 1 April 1989
+
+Moe Ghoul, President of Vice
+
+If you are a university student, we recommend you request the disclaimer at an early stage in writing the program to reduce resistance. If you are not a research assistant or teaching assistant, it could be that the university has no claim to copyright on your work, but ask a lawyer to make sure of that.
+
+If you work, the best time to negotiate permission to release free software is when negotiating your employment agreement.
 
                      END OF TERMS AND CONDITIONS
 
