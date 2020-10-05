@@ -8,6 +8,11 @@ xml_header = """<?xml version="1.0" encoding="UTF-8"?>
 """
 xml_footer = "</urlset>"
 
+sitemapindex_header = """<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+"""
+sitemapindex_footer = "</sitemapindex>"
+
 crawler_user_agent = 'Sitemap crawler'
 
 # if used with --auth you have to provide username and password here for basic auth
