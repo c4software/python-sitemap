@@ -307,7 +307,7 @@ class Crawler:
 				continue
 			if domain_link != self.target_domain:
 				continue
-            		if parsed_link.path in ["", "/"] and parsed_link.query == '':
+			if parsed_link.path in ["", "/"] and parsed_link.query == '':
 				continue
 			if "javascript" in link:
 				continue
