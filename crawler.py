@@ -1,22 +1,21 @@
 import asyncio
-import concurrent.futures
 import base64
-from collections import defaultdict
-from copy import copy
-import math
-
-import config
+import concurrent.futures
 import logging
-from urllib.parse import urljoin, urlunparse, urlsplit, urlunsplit
-
-import re
-from urllib.parse import urlparse
-from urllib.request import urlopen, Request
-from urllib.robotparser import RobotFileParser
-from datetime import datetime
-
+import math
 import mimetypes
 import os
+import re
+from collections import defaultdict
+from copy import copy
+from datetime import datetime
+from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+from urllib.robotparser import RobotFileParser
+
+import config
+
 
 class IllegalArgumentError(ValueError):
 	pass
