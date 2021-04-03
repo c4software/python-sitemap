@@ -260,7 +260,10 @@ class Crawler:
 		lastmod = ""
 		if date:
 			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
-		url_string = "<url><loc>"+self.htmlspecialchars(url.geturl())+"</loc>" + lastmod + image_list + "</url>"
+		# Note: that if there was a redirect, `final_url` may be different than
+		#       `current_url`
+		final_url = response.geturl()
+		url_string = "<url><loc>"+self.htmlspecialchars(final_url)+"</loc>" + lastmod + image_list + "</url>"
 		self.url_strings_to_output.append(url_string)
 
 		# Found links
