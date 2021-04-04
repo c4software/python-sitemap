@@ -1,21 +1,21 @@
 import asyncio
-import concurrent.futures
 import base64
-from copy import copy
-import math
-
-import config
+import concurrent.futures
 import logging
-from urllib.parse import urljoin, urlunparse, urlsplit, urlunsplit
-
-import re
-from urllib.parse import urlparse
-from urllib.request import urlopen, Request
-from urllib.robotparser import RobotFileParser
-from datetime import datetime
-
+import math
 import mimetypes
 import os
+import re
+from collections import defaultdict
+from copy import copy
+from datetime import datetime
+from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+from urllib.robotparser import RobotFileParser
+
+import config
+
 
 class IllegalArgumentError(ValueError):
 	pass
@@ -44,7 +44,7 @@ class Crawler:
 	crawled_or_crawling = set([])
 	excluded = set([])
 
-	marked = {}
+	marked = defaultdict(list)
 
 	not_parseable_resources = (".epub", ".mobi", ".docx", ".doc", ".opf", ".7z", ".ibooks", ".cbr", ".avi", ".mkv", ".mp4", ".jpg", ".jpeg", ".png", ".gif" ,".pdf", ".iso", ".rar", ".tar", ".tgz", ".zip", ".dmg", ".exe")
 
@@ -53,7 +53,7 @@ class Crawler:
 	imageregex = re.compile (b'<img [^>]*src=[\'|"](.*?)[\'"].*?>')
 
 	rp = None
-	response_code={}
+	response_code=defaultdict(int)
 	nb_url=1 # Number of url.
 	nb_rp=0 # Number of url blocked by the robots.txt
 	nb_exclude=0 # Number of url excluded by extension or word
@@ -174,24 +174,18 @@ class Crawler:
 			base64string = base64.b64encode(bytes(f'{config.username}:{config.password}', 'ascii'))
 			request.add_header("Authorization", "Basic %s" % base64string.decode('utf-8'))
 
-		# Ignore ressources listed in the not_parseable_resources
+		# Ignore resources listed in the not_parseable_resources
 		# Its avoid dowloading file like pdf… etc
 		if not url.path.endswith(self.not_parseable_resources):
 			try:
 				response = urlopen(request)
 			except Exception as e:
 				if hasattr(e,'code'):
-					if e.code in self.response_code:
-						self.response_code[e.code]+=1
-					else:
-						self.response_code[e.code]=1
+					self.response_code[e.code] += 1
 
 					# Gestion des urls marked pour le reporting
 					if self.report:
-						if e.code in self.marked:
-							self.marked[e.code].append(current_url)
-						else:
-							self.marked[e.code] = [current_url]
+						self.marked[e.code].append(current_url)
 
 				logging.debug ("{1} ==> {0}".format(e, current_url))
 				return
@@ -203,10 +197,7 @@ class Crawler:
 		if response is not None:
 			try:
 				msg = response.read()
-				if response.getcode() in self.response_code:
-					self.response_code[response.getcode()]+=1
-				else:
-					self.response_code[response.getcode()]=1
+				self.response_code[response.getcode()] += 1
 
 				response.close()
 
@@ -268,7 +259,10 @@ class Crawler:
 		lastmod = ""
 		if date:
 			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
-		url_string = "<url><loc>"+self.htmlspecialchars(url.geturl())+"</loc>" + lastmod + image_list + "</url>"
+		# Note: that if there was a redirect, `final_url` may be different than
+		#       `current_url`
+		final_url = response.geturl()
+		url_string = "<url><loc>"+self.htmlspecialchars(final_url)+"</loc>" + lastmod + image_list + "</url>"
 		self.url_strings_to_output.append(url_string)
 
 		# Found links
