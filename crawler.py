@@ -260,8 +260,8 @@ class Crawler:
 		if date:
 			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
 		# Note: that if there was a redirect, `final_url` may be different than
-		#       `current_url`
-		final_url = response.geturl()
+		#       `current_url`, and avoid not parseable content
+		final_url = response.geturl() if response is not None else current_url
 		url_string = "<url><loc>"+self.htmlspecialchars(final_url)+"</loc>" + lastmod + image_list + "</url>"
 		self.url_strings_to_output.append(url_string)
 
