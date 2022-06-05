@@ -165,7 +165,7 @@ class Crawler:
 
 	def __crawl(self, current_url):
 		url = urlparse(current_url)
-		logging.info("Crawling #{}: {}".format(self.num_crawled, url.geturl()))
+		logging.info(f"Crawling #{self.num_crawled}: {url.geturl()}")
 		self.num_crawled += 1
 
 		request = Request(current_url, headers={"User-Agent": config.crawler_user_agent})
@@ -187,10 +187,10 @@ class Crawler:
 					if self.report:
 						self.marked[e.code].append(current_url)
 
-				logging.debug ("{1} ==> {0}".format(e, current_url))
+				logging.debug (f"{e} ==> {current_url}")
 				return
 		else:
-			logging.debug("Ignore {0} content might be not parseable.".format(current_url))
+			logging.debug(f"Ignore {current_url} content might be not parseable.")
 			response = None
 
 		# Read the response
@@ -210,7 +210,7 @@ class Crawler:
 				date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %Z')
 
 			except Exception as e:
-				logging.debug ("{1} ===> {0}".format(e, current_url))
+				logging.debug (f"{e} ===> {current_url}")
 				return
 		else:
 			# Response is None, content not downloaded, just continu and add
@@ -236,8 +236,8 @@ class Crawler:
 				# Append domain if not present
 				elif not image_link.startswith(("http", "https")):
 					if not image_link.startswith("/"):
-						image_link = "/{0}".format(image_link)
-					image_link = "{0}{1}".format(self.domain.strip("/"), image_link.replace("./", "/"))
+						image_link = f"/{image_link}"
+					image_link = f"{self.domain.strip("/")}{image_link.replace("./", "/")}"
 
 				# Ignore image if path is in the exclude_url list
 				if not self.exclude_url(image_link):
@@ -252,8 +252,8 @@ class Crawler:
 				# Test if images as been already seen and not present in the
 				# robot file
 				if self.can_fetch(image_link):
-					logging.debug("Found image : {0}".format(image_link))
-					image_list = "{0}<image:image><image:loc>{1}</image:loc></image:image>".format(image_list, self.htmlspecialchars(image_link))
+					logging.debug(f"Found image : {image_link}")
+					image_list = f"{image_list}<image:image><image:loc>{self.htmlspecialchars(image_link)}</image:loc></image:image>"
 
 		# Last mod fetched ?
 		lastmod = ""
@@ -269,7 +269,7 @@ class Crawler:
 		links = self.linkregex.findall(msg)
 		for link in links:
 			link = link.decode("utf-8", errors="ignore")
-			logging.debug("Found : {0}".format(link))
+			logging.debug(f"Found : {link}")
 
 			if link.startswith('/'):
 				link = url.scheme + '://' + url[1] + link
