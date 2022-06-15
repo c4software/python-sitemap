@@ -237,7 +237,7 @@ class Crawler:
 				elif not image_link.startswith(("http", "https")):
 					if not image_link.startswith("/"):
 						image_link = f"/{image_link}"
-					image_link = f"{self.domain.strip("/")}{image_link.replace("./", "/")}"
+					image_link = f'{self.domain.strip("/")}{image_link.replace("./", "/")}'
 
 				# Ignore image if path is in the exclude_url list
 				if not self.exclude_url(image_link):
@@ -421,8 +421,8 @@ class Crawler:
 
 	@staticmethod
 	def is_image(path):
-		 mt,me = mimetypes.guess_type(path)
-		 return mt is not None and mt.startswith("image/")
+		mt,me = mimetypes.guess_type(path)
+		return mt is not None and mt.startswith("image/")
 
 	def exclude_link(self,link):
 		if link not in self.excluded:
