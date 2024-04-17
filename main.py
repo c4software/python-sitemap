@@ -14,7 +14,7 @@ parser.add_argument('--auth', action="store_true", default=False, help="Enable b
 parser.add_argument('-v', '--verbose', action="store_true", help="Enable verbose output")
 parser.add_argument('--output', action="store", default=None, help="Output file")
 parser.add_argument('--as-index', action="store_true", default=False, required=False, help="Outputs sitemap as index and multiple sitemap files if crawl results in more than 50,000 links (uses filename in --output as name of index file)")
-parser.add_argument('--sort-alphabetically', action="store_true", default=False, required=False, help="Sorts the output URLs alphabetically")
+parser.add_argument('--no-sort',  action="store_false", default=True, required=False, help="Disables sorting the output URLs alphabetically", dest='sort_alphabetically')
 parser.add_argument('--exclude', action="append", default=[], required=False, help="Exclude Url if contain")
 parser.add_argument('--drop', action="append", default=[], required=False, help="Drop a string from the url")
 parser.add_argument('--report', action="store_true", default=False, required=False, help="Display a report")

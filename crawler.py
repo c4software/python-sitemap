@@ -66,7 +66,7 @@ class Crawler:
 	def __init__(self, num_workers=1, parserobots=False, output=None,
 				 report=False ,domain="", exclude=[], skipext=[], drop=[],
 				 debug=False, verbose=False, images=False, auth=False, as_index=False,
-				 sort_alphabetically=False, user_agent='*'):
+				 sort_alphabetically=True, user_agent='*'):
 		self.num_workers = num_workers
 		self.parserobots = parserobots
 		self.user_agent = user_agent

@@ -27,6 +27,13 @@ Read a config file to set parameters:
   $ python main.py --domain https://blog.lesite.us --output sitemap.xml --verbose
   ```
 
+#### Disable sorting output:
+
+  ```
+  $ python main.py --domain https://blog.lesite.us --output sitemap.xml --no-sort
+  ```
+
+
 #### Enable Image Sitemap
 
 More informations here https://support.google.com/webmasters/answer/178636?hl=en
