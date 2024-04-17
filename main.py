@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-import os
-
 import json
-
 import crawler
 
 parser = argparse.ArgumentParser(description='Python SiteMap Crawler')
 parser.add_argument('--skipext', action="append", default=[], required=False, help="File extension to skip")
 parser.add_argument('-n', '--num-workers', type=int, default=1, help="Number of workers if multithreading")
 parser.add_argument('--parserobots', action="store_true", default=False, required=False, help="Ignore file defined in robots.txt")
+parser.add_argument('--user-agent', action="store", default="*", help="Use the rules defined in robots.txt for a specific User-agent (i.e. Googlebot)")
 parser.add_argument('--debug', action="store_true", default=False, help="Enable debug mode")
 parser.add_argument('--auth', action="store_true", default=False, help="Enable basic authorisation while crawling")
 parser.add_argument('-v', '--verbose', action="store_true", help="Enable verbose output")
