@@ -65,9 +65,11 @@ class Crawler:
 
 	def __init__(self, num_workers=1, parserobots=False, output=None,
 				 report=False ,domain="", exclude=[], skipext=[], drop=[],
-				 debug=False, verbose=False, images=False, auth=False, as_index=False):
+				 debug=False, verbose=False, images=False, auth=False, as_index=False,
+				 user_agent='*'):
 		self.num_workers = num_workers
 		self.parserobots = parserobots
+		self.user_agent = user_agent
 		self.output 	= output
 		self.report 	= report
 		self.domain 	= domain
@@ -437,7 +439,7 @@ class Crawler:
 	def can_fetch(self, link):
 		try:
 			if self.parserobots:
-				if self.rp.can_fetch("*", link):
+				if self.rp.can_fetch(self.user_agent, link):
 					return True
 				else:
 					logging.debug ("Crawling of {0} disabled by robots.txt".format(link))

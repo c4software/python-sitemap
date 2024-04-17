@@ -65,6 +65,12 @@ More informations here https://support.google.com/webmasters/answer/178636?hl=en
   $ python main.py --domain https://blog.lesite.us --output sitemap.xml --parserobots
   ```
 
+#### Use specific user-agent for robots.txt:
+
+  ```
+  $ python main.py --domain https://blog.lesite.us --output sitemap.xml --parserobots --user-agent Googlebot
+  ```
+
 #### Human readable XML
 
 ```
