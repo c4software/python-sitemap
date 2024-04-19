@@ -66,7 +66,7 @@ class Crawler:
 	def __init__(self, num_workers=1, parserobots=False, output=None,
 				 report=False ,domain="", exclude=[], skipext=[], drop=[],
 				 debug=False, verbose=False, images=False, auth=False, as_index=False,
-				 user_agent='*'):
+				 sort_alphabetically=True, user_agent='*'):
 		self.num_workers = num_workers
 		self.parserobots = parserobots
 		self.user_agent = user_agent
@@ -81,6 +81,7 @@ class Crawler:
 		self.images     = images
 		self.auth       = auth
 		self.as_index   = as_index
+		self.sort_alphabetically = sort_alphabetically
 
 		if self.debug:
 			log_level = logging.DEBUG
@@ -137,6 +138,9 @@ class Crawler:
 				event_loop.close()
 
 		logging.info("Crawling has reached end of all found links")
+
+		if self.sort_alphabetically:
+			self.url_strings_to_output.sort()
 
 		self.write_sitemap_output()
 
@@ -423,7 +427,7 @@ class Crawler:
 
 	@staticmethod
 	def is_image(path):
-		mt,me = mimetypes.guess_type(path)
+		mt, me = mimetypes.guess_type(path)
 		return mt is not None and mt.startswith("image/")
 
 	def exclude_link(self,link):
