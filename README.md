@@ -42,6 +42,12 @@ More informations here https://support.google.com/webmasters/answer/178636?hl=en
   $ python main.py --domain https://blog.lesite.us --output sitemap.xml --images
   ```
 
+#### Allow fetching content from Iframes
+
+  ```
+  $ python main.py --domain https://blog.lesite.us --output sitemap.xml --fetch-iframes
+  ```
+
 #### Enable report for print summary of the crawl:
 
   ```

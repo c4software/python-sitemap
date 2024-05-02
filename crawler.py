@@ -51,6 +51,8 @@ class Crawler:
 	# TODO also search for window.location={.*?}
 	linkregex = re.compile(b'<a [^>]*href=[\'|"](.*?)[\'"][^>]*?>')
 	imageregex = re.compile (b'<img [^>]*src=[\'|"](.*?)[\'"].*?>')
+	iframeregex = re.compile (b'<iframe [^>]*src=[\'|"](.*?)[\'"].*?>')
+	baseregex = re.compile (b'<base [^>]*href=[\'|"](.*?)[\'"].*?>')
 
 	rp = None
 	response_code=defaultdict(int)
@@ -66,21 +68,22 @@ class Crawler:
 	def __init__(self, num_workers=1, parserobots=False, output=None,
 				 report=False ,domain="", exclude=[], skipext=[], drop=[],
 				 debug=False, verbose=False, images=False, auth=False, as_index=False,
-				 sort_alphabetically=True, user_agent='*'):
-		self.num_workers = num_workers
-		self.parserobots = parserobots
-		self.user_agent = user_agent
-		self.output 	= output
-		self.report 	= report
-		self.domain 	= domain
-		self.exclude 	= exclude
-		self.skipext 	= skipext
-		self.drop		= drop
-		self.debug		= debug
-		self.verbose    = verbose
-		self.images     = images
-		self.auth       = auth
-		self.as_index   = as_index
+				 fetch_iframes=False, sort_alphabetically=True, user_agent='*'):
+		self.num_workers   = num_workers
+		self.parserobots   = parserobots
+		self.user_agent    = user_agent
+		self.output 	   = output
+		self.report 	   = report
+		self.domain 	   = domain
+		self.exclude 	   = exclude
+		self.skipext 	   = skipext
+		self.drop		   = drop
+		self.debug		   = debug
+		self.verbose       = verbose
+		self.images        = images
+		self.fetch_iframes = fetch_iframes
+		self.auth          = auth
+		self.as_index      = as_index
 		self.sort_alphabetically = sort_alphabetically
 
 		if self.debug:
@@ -104,7 +107,7 @@ class Crawler:
 			self.target_domain = url_parsed.netloc
 			self.scheme = url_parsed.scheme
 		except:
-			logging.error("Invalide domain")
+			logging.error("Invalid domain")
 			raise IllegalArgumentError("Invalid domain")
 
 		if self.output:
@@ -261,18 +264,46 @@ class Crawler:
 					logging.debug(f"Found image : {image_link}")
 					image_list = f"{image_list}<image:image><image:loc>{self.htmlspecialchars(image_link)}</image:loc></image:image>"
 
-		# Last mod fetched ?
-		lastmod = ""
-		if date:
-			lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
-		# Note: that if there was a redirect, `final_url` may be different than
-		#       `current_url`, and avoid not parseable content
-		final_url = response.geturl() if response is not None else current_url
-		url_string = "<url><loc>"+self.htmlspecialchars(final_url)+"</loc>" + lastmod + image_list + "</url>"
-		self.url_strings_to_output.append(url_string)
+		# Only add to sitemap URLs with same domain as the site being indexed
+		if url.netloc == self.target_domain:
+			# Last mod fetched ?
+			lastmod = ""
+			if date:
+				lastmod = "<lastmod>"+date.strftime('%Y-%m-%dT%H:%M:%S+00:00')+"</lastmod>"
+			# Note: that if there was a redirect, `final_url` may be different than
+			#       `current_url`, and avoid not parseable content
+			final_url = response.geturl() if response is not None else current_url
+			url_string = "<url><loc>"+self.htmlspecialchars(final_url)+"</loc>" + lastmod + image_list + "</url>"
+			self.url_strings_to_output.append(url_string)
+		# If the URL has a different domain than the site being indexed, this was reached through an iframe
+  		# In this case: if the base tag matches the site being indexed, then all relative URLs should be crawled.
+		else:
+			base_urls = self.baseregex.findall(msg)
 
+			if len(base_urls) == 0:
+				return
+			
+			base_url = base_urls[0].decode("utf-8", errors="ignore")
+			parsed_base_url = urlparse(base_url)
+			if parsed_base_url.netloc != self.target_domain:
+				return
+			
+			current_url = base_url
+			url = parsed_base_url
+		
 		# Found links
-		links = self.linkregex.findall(msg)
+		self.find_links(msg, url, current_url)
+
+		if self.fetch_iframes:
+			self.find_links(msg, url, current_url, iframes=True)
+
+
+	def find_links(self, msg, url, current_url, iframes: bool = False):
+		if iframes:
+			links = self.iframeregex.findall(msg)
+		else:
+			links = self.linkregex.findall(msg)
+
 		for link in links:
 			link = link.decode("utf-8", errors="ignore")
 			logging.debug(f"Found : {link}")
@@ -291,8 +322,8 @@ class Crawler:
 				link = link[:link.index('#')]
 
 			# Drop attributes if needed
-			for toDrop in self.drop:
-				link=re.sub(toDrop,'',link)
+			for to_drop in self.drop:
+				link = re.sub(to_drop, '', link)
 
 			# Parse the url to get domain and file extension
 			parsed_link = urlparse(link)
@@ -305,7 +336,7 @@ class Crawler:
 				continue
 			if link in self.excluded:
 				continue
-			if domain_link != self.target_domain:
+			if domain_link != self.target_domain and not iframes:
 				continue
 			if parsed_link.path in ["", "/"] and parsed_link.query == '':
 				continue
