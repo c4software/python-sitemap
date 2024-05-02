@@ -107,7 +107,7 @@ class Crawler:
 			self.target_domain = url_parsed.netloc
 			self.scheme = url_parsed.scheme
 		except:
-			logging.error("Invalide domain")
+			logging.error("Invalid domain")
 			raise IllegalArgumentError("Invalid domain")
 
 		if self.output:
@@ -322,8 +322,8 @@ class Crawler:
 				link = link[:link.index('#')]
 
 			# Drop attributes if needed
-			for toDrop in self.drop:
-				link=re.sub(toDrop,'',link)
+			for to_drop in self.drop:
+				link = re.sub(to_drop, '', link)
 
 			# Parse the url to get domain and file extension
 			parsed_link = urlparse(link)
